@@ -1,0 +1,40 @@
+{
+  "name": "ls-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt",
+    "build": "nuxt build",
+    "start": "nuxt start",
+    "generate": "nuxt generate",
+    "clear-cache": "rm -rf node_modules/.cache/hard-source/"
+  },
+  "dependencies": {
+    "@line/bot-sdk": "^7.4.0",
+    "@nuxtjs/axios": "^5.13.6",
+    "@nuxtjs/dotenv": "^1.4.1",
+    "@nuxtjs/moment": "^1.6.1",
+    "cjs-module": "^1.5.0",
+    "core-js": "2",
+    "crypto-js": "^4.1.1",
+    "cssesc": "^3.0.0",
+    "event-source-polyfill": "^1.0.25",
+    "express": "^4.17.1",
+    "firebase": "^9.5.0",
+    "firebase-admin": "^10.0.0",
+    "firebase-functions": "^3.18.1",
+    "line-message-builder": "^1.1.1",
+    "nuxt": "^2.15.8",
+    "nuxt-webfontloader": "^1.1.0",
+    "vue-drag-resize": "^1.5.4",
+    "vue-loading-overlay": "^3.0",
+    "vue-qr": "^3.2.4",
+    "vue-toastification": "^1.7.14",
+    "vuedraggable": "^2.24.3",
+    "vuetify": "^2.5.5",
+    "vuex-persistedstate": "^4.1.0"
+  },
+  "devDependencies": {
+    "@nuxtjs/vuetify": "^1.12.1"
+  }
+}

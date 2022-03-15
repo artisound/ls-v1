@@ -1,0 +1,48 @@
+{
+  "follow": [
+    {
+      "type": "flex",
+      "altText": "友だち登録ありがとう！",
+      "contents": {
+        "type": "bubble",
+        "direction": "ltr",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "contents": [
+            {
+              "type": "text",
+              "text": "友だち登録ありがとうございます！",
+              "size": "md",
+              "align": "start",
+              "wrap": true,
+              "contents": []
+            }, {
+              "type": "text",
+              "text": "まずは下のボタンからユーザー登録をしてください。",
+              "align": "start",
+              "margin": "md",
+              "wrap": true,
+              "contents": []
+            }
+          ]
+        },
+        "footer": {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "button",
+              "action": {
+                "type": "uri",
+                "label": "ユーザー登録",
+                "uri": "https://liff.line.me/1656299657-pL0jOoWj"
+              },
+              "style": "primary"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
