@@ -1,0 +1,163 @@
+[33mcommit 806ad8294fb1c3daf395cc4d4c3d41cc434d8d95[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m
+Author: k.kato <k.kato@zero-product.jp>
+Date:   Mon Mar 14 21:23:53 2022 +0900
+
+    v0.9.0
+
+A	.env.sample
+M	.gitignore
+A	.line-api-cli.yml
+M	README.md
+A	build.sh
+A	pages/staff/_slug.vue
+
+[33mcommit 0f78f667ab5e9c28bb1dfbce15ce80bcc4ef3dc2[m
+Author: k.kato <k.kato@zero-product.jp>
+Date:   Sun Mar 13 15:29:55 2022 +0900
+
+    v0.9.1
+
+M	.firebase/hosting.ZGlzdA.cache
+M	components/Breadcrumbs.vue
+M	components/Header.vue
+M	components/MessagePreview.vue
+M	functions/index.js
+M	functions/line_api.js
+M	functions/package-lock.json
+M	functions/package.json
+M	functions/yarn.lock
+M	middleware/authenticated.js
+M	nuxt.config.js
+M	package-lock.json
+M	package.json
+M	pages/contact.vue
+D	pages/contact/_id.vue
+D	pages/contact/edit.vue
+M	pages/customer.vue
+D	pages/customer/_id.vue
+D	pages/customer/edit.vue
+M	pages/index.vue
+M	pages/liff/contact/index.vue
+M	pages/liff/regist/index.vue
+M	pages/liff/sync-staff/index.vue
+M	pages/login.vue
+M	pages/media.vue
+M	pages/message.vue
+D	pages/message/._id.vue
+M	pages/message/_slug.vue
+D	pages/message/edit.vue
+M	pages/richmenu.vue
+M	pages/richmenu/_slug.vue
+M	pages/scenario.vue
+M	pages/scenario/_slug.vue
+M	pages/schedule.vue
+M	pages/setting.vue
+M	pages/setting/account.vue
+M	pages/setting/field.vue
+M	pages/setting/field/_slug.vue
+M	pages/setting/line.vue
+M	pages/staff.vue
+D	pages/staff/_id.vue
+M	pages/staff/edit.vue
+M	store/index.js
+M	yarn.lock
+
+[33mcommit 84788f3cfda6d1f982ac99ffbc0058534229c99d[m
+Author: k.kato <k.kato@zero-product.jp>
+Date:   Tue Mar 1 09:25:41 2022 +0900
+
+    0.9
+
+A	.editorconfig
+A	.firebase/hosting.Lm51eHRcZGlzdA.cache
+A	.firebase/hosting.ZGlzdA.cache
+A	.firebase/hosting.cHVibGlj.cache
+A	.firebaserc
+A	.gitignore
+A	.line/admin/.line-api-cli.yml
+A	.line/liff/.line-api-cli.yml
+A	README.md
+A	api/index.js
+A	api/line.js
+A	assets/css/style.css
+A	assets/json/line_stickers.json
+A	assets/variables.scss
+A	components/Breadcrumbs.vue
+A	components/CreateForm.vue
+A	components/DetailForm.vue
+A	components/FileDragInput.vue
+A	components/FooterLiff.vue
+A	components/Header.vue
+A	components/HeaderLiff.vue
+A	components/InputForm.vue
+A	components/MessagePreview.vue
+A	components/StandardList.vue
+A	deploy.sh
+A	firebase.json
+A	firestore.indexes.json
+A	firestore.rules
+A	functions/.gitignore
+A	functions/index.js
+A	functions/line_api.js
+A	functions/message_formats.json
+A	functions/package-lock.json
+A	functions/package.json
+A	functions/yarn.lock
+A	jsconfig.json
+A	layouts/error.vue
+A	layouts/liff.vue
+A	layouts/login.vue
+A	layouts/main.vue
+A	middleware/authenticated.js
+A	nuxt.config.js
+A	package-lock.json
+A	package.json
+A	pages/contact.vue
+A	pages/contact/_id.vue
+A	pages/contact/edit.vue
+A	pages/customer.vue
+A	pages/customer/_id.vue
+A	pages/customer/edit.vue
+A	pages/index.vue
+A	pages/liff/contact/index.vue
+A	pages/liff/regist/index.vue
+A	pages/liff/reserve/_id.vue
+A	pages/liff/reserve/index.vue
+A	pages/liff/sync-staff/index.vue
+A	pages/login.vue
+A	pages/media.vue
+A	pages/message.vue
+A	pages/message/._id.vue
+A	pages/message/_slug.vue
+A	pages/message/edit.vue
+A	pages/richmenu.vue
+A	pages/richmenu/_slug.vue
+A	pages/scenario.vue
+A	pages/scenario/_slug.vue
+A	pages/schedule.vue
+A	pages/setting.vue
+A	pages/setting/account.vue
+A	pages/setting/field.vue
+A	pages/setting/field/_slug.vue
+A	pages/setting/line.vue
+A	pages/staff.vue
+A	pages/staff/_id.vue
+A	pages/staff/edit.vue
+A	plugins/firebase.auth.js
+A	plugins/firebase.js
+A	plugins/line_api.js
+A	plugins/persistedstate.js
+A	plugins/toast.js
+A	plugins/vue-drag-resize.js
+A	plugins/vue-draggable.js
+A	plugins/vue-qrcode.js
+A	public/404.html
+A	public/index.html
+A	static/favicon.ico
+A	static/src/js/functions.js
+A	static/zp-logo-white.png
+A	storage.rules
+A	store/README.md
+A	store/index.js
+A	store/login.js
+A	yarn.lock
