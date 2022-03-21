@@ -12,8 +12,10 @@ localhost.pem
 
 .firebaserc
 firebase.json
-firebase*
-firestore*
+firestore.index.json
+.firebase
+functions/node_modules/
+firebase_serviceAccountKey.json
 
 # Runtime data
 pids

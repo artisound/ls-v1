@@ -1,14 +1,13 @@
 'use strict';
 require('dotenv').config();
 const functions = require("firebase-functions");
-const admin     = require('firebase-admin')
+const admin     = require('firebase-admin');
 const express   = require('express');
 const moment    = require('moment');
 const axios     = require('axios');
 const request     = require('request');
 const app       = express();
 const lineApi   = require('./line_api');
-const { firebaseConfig } = require('firebase-functions');
 
 const region    = 'asia-northeast2'
 const timezone  = 'Asia/Tokyo'

@@ -1,0 +1,392 @@
+{
+  "setting": {
+    "corp": {
+      "corp_name": "",
+      "corp_tel": "",
+      "rep_name": ""
+    },
+    "field": {
+      "collections": [
+        {
+          "collection": "customer",
+          "created_at": "2021-12-31 12:00:00",
+          "name": "お客様情報",
+          "updated_at": "2022-03-06 13:47:38"
+        },
+        {
+          "collection": "staff",
+          "created_at": "2021-12-31 12:00:00",
+          "name": "従業員情報",
+          "updated_at": "2022-02-13 19:14:59"
+        },
+        {
+          "collection": "test",
+          "created_at": "2022-01-03 17:52:29",
+          "name": "テスト",
+          "updated_at": "2022-01-03 18:04:56"
+        },
+        {
+          "collection": "contact",
+          "created_at": "2022-01-03 20:08:12",
+          "name": "お問い合わせ",
+          "updated_at": "2022-01-04 20:12:44"
+        }
+      ],
+      "__collections__": {
+        "customer": {
+          "0": {
+            "condition": true,
+            "disabled": false,
+            "hide": false,
+            "icon": "mdi-account",
+            "label": "お客様名",
+            "name": "field-name",
+            "num": 0,
+            "placeholder": "山田　太郎",
+            "required": true,
+            "type": "text",
+            "value": ""
+          },
+          "1": {
+            "icon": "mdi-map-marker",
+            "label": "お客様名（カナ）",
+            "name": "field-name-kana",
+            "num": 1,
+            "placeholder": "ヤマダ　タロウ",
+            "type": "text",
+            "value": ""
+          },
+          "2": {
+            "condition": true,
+            "items": [
+              {
+                "label": "－",
+                "value": ""
+              },
+              {
+                "label": "男性",
+                "value": "男性"
+              },
+              {
+                "label": "女性",
+                "value": "女性"
+              }
+            ],
+            "label": "性別",
+            "name": "field-gender",
+            "num": 2,
+            "type": "radio",
+            "value": "男性"
+          },
+          "3": {
+            "icon": "mdi-cake-variant",
+            "label": "生年月日",
+            "name": "field-birthday",
+            "num": 3,
+            "placeholder": "",
+            "type": "text",
+            "value": ""
+          },
+          "4": {
+            "icon": "mdi-map-marker",
+            "label": "郵便番号",
+            "name": "field-zip_code",
+            "num": 4,
+            "placeholder": "XXX-XXXX",
+            "type": "text",
+            "value": ""
+          },
+          "5": {
+            "icon": "mdi-home-city",
+            "label": "住所",
+            "name": "field-address",
+            "num": 5,
+            "placeholder": "住所",
+            "type": "text",
+            "value": ""
+          },
+          "6": {
+            "name": "field-line_user_id",
+            "num": 6,
+            "type": "hidden",
+            "value": ""
+          },
+          "7": {
+            "name": "field-line_user_name",
+            "num": 7,
+            "type": "hidden",
+            "value": ""
+          },
+          "8": {
+            "name": "field-line_follow_status",
+            "num": 8,
+            "type": "hidden",
+            "value": ""
+          },
+          "9": {
+            "name": "field-line_follow_datetime",
+            "num": 9,
+            "type": "hidden",
+            "value": ""
+          },
+          "10": {
+            "name": "field-line_block_status",
+            "num": 10,
+            "type": "hidden",
+            "value": ""
+          },
+          "11": {
+            "name": "field-line_language",
+            "num": 11,
+            "type": "hidden",
+            "value": ""
+          }
+        },
+        "staff": {
+          "0": {
+            "icon": "mdi-account-tie",
+            "label": "従業員名",
+            "name": "field-name",
+            "num": 0,
+            "placeholder": "山田　太郎",
+            "type": "text",
+            "value": ""
+          },
+          "1": {
+            "hide": true,
+            "icon": "mdi-email",
+            "label": "メールアドレス",
+            "name": "field-email",
+            "num": 1,
+            "placeholder": "name@example.com",
+            "type": "text",
+            "value": ""
+          },
+          "2": {
+            "items": [
+              {
+                "label": "男性",
+                "value": "男性"
+              },
+              {
+                "label": "女性",
+                "value": "女性"
+              }
+            ],
+            "label": "性別",
+            "name": "field-gender",
+            "num": 2,
+            "row": false,
+            "type": "radio",
+            "value": "男性"
+          },
+          "3": {
+            "icon": "mdi-calendar",
+            "label": "生年月日",
+            "name": "field-birthday",
+            "num": 3,
+            "type": "date",
+            "value": ""
+          },
+          "4": {
+            "icon": "mdi-map-marker",
+            "label": "郵便番号",
+            "name": "field-zip_code",
+            "num": 4,
+            "placeholder": "781-1234",
+            "type": "tel",
+            "value": ""
+          },
+          "5": {
+            "icon": "mdi-account-network",
+            "items": [
+              {
+                "label": "社長 / 代表",
+                "value": "社長 / 代表"
+              },
+              {
+                "label": "役員",
+                "value": "役員"
+              },
+              {
+                "label": "管理職",
+                "value": "管理職"
+              },
+              {
+                "label": "一般",
+                "value": "一般"
+              },
+              {
+                "label": "その他",
+                "value": "その他"
+              }
+            ],
+            "label": "役職",
+            "name": "field-position",
+            "num": 5,
+            "type": "select",
+            "value": ""
+          },
+          "6": {
+            "icon": "mdi-briefcase",
+            "items": [
+              {
+                "label": "―",
+                "value": "―"
+              },
+              {
+                "label": "正社員",
+                "value": "正社員"
+              },
+              {
+                "label": "契約社員",
+                "value": "契約社員"
+              },
+              {
+                "label": "派遣社員",
+                "value": "派遣社員"
+              },
+              {
+                "label": "パート / アルバイト",
+                "value": "パート / アルバイト"
+              },
+              {
+                "label": "その他",
+                "value": "その他"
+              }
+            ],
+            "label": "雇用区分",
+            "name": "field-employ_status",
+            "num": 6,
+            "type": "select",
+            "value": ""
+          },
+          "7": {
+            "icon": "mdi-sitemap",
+            "label": "部署",
+            "name": "field-department",
+            "num": 7,
+            "placeholder": "本部",
+            "type": "text",
+            "value": ""
+          },
+          "8": {
+            "hide": false,
+            "icon": "mdi-calendar-end",
+            "label": "入社日",
+            "name": "field-hire_date",
+            "num": 8,
+            "placeholder": "",
+            "type": "date",
+            "value": ""
+          },
+          "9": {
+            "label": "備考",
+            "name": "field-remarks",
+            "num": 9,
+            "placeholder": "",
+            "type": "textarea",
+            "value": ""
+          }
+        },
+        "contact": {
+          "0": {
+            "icon": "",
+            "label": "件名",
+            "name": "field-title",
+            "num": 0,
+            "placeholder": "○○について",
+            "required": true,
+            "type": "text",
+            "value": ""
+          },
+          "1": {
+            "icon": "",
+            "label": "本文",
+            "name": "field-body",
+            "num": 1,
+            "placeholder": "入力例",
+            "required": true,
+            "rows": "5",
+            "type": "textarea",
+            "value": ""
+          },
+          "2": {
+            "name": "field-uid",
+            "num": 2,
+            "type": "hidden",
+            "value": ""
+          },
+          "3": {
+            "name": "field-sended_at",
+            "num": 3,
+            "type": "hidden",
+            "value": ""
+          }
+        }
+      }
+    },
+    "line": {
+      "customer_added_message": [
+        {
+          "text": "登録ありがとうございますっ",
+          "type": "text"
+        }
+      ],
+      "customer_added_richmenu": "",
+      "friend_added_message": [
+        {
+          "altText": "友だち登録ありがとうございます！",
+          "contents": {
+            "body": {
+              "contents": [
+                {
+                  "align": "start",
+                  "contents": [],
+                  "size": "md",
+                  "text": "友だち登録ありがとうございます！\n下のボタンからユーザー登録をお願いします。",
+                  "type": "text",
+                  "wrap": true
+                }
+              ],
+              "layout": "vertical",
+              "type": "box"
+            },
+            "direction": "ltr",
+            "footer": {
+              "contents": [
+                {
+                  "action": {
+                    "label": "ユーザー登録",
+                    "type": "uri",
+                    "uri": "https://liff.line.me/1656553601-XavW8Ag4"
+                  },
+                  "style": "primary",
+                  "type": "button"
+                }
+              ],
+              "layout": "horizontal",
+              "type": "box"
+            },
+            "type": "bubble"
+          },
+          "type": "flex"
+        }
+      ],
+      "init_richmenu": "",
+      "turn_back_message": [
+        {
+          "text": "おかえりなさい！",
+          "type": "text"
+        }
+      ]
+    }
+  },
+  "staff": {},
+  "contact": {},
+  "scenario": {},
+  "customer": {},
+  "message": {},
+  "schedule": {},
+  "media": {}
+}

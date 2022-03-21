@@ -455,6 +455,7 @@ export default {
         }
       } catch(e) {
         console.error(e)
+        this.loadingTbl = false
       }
     },
 

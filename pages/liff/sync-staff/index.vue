@@ -137,7 +137,8 @@ export default {
     // ==================================
     // ① LIFF ユーザー情報取得
     // ==================================
-    this.lineUser = await getLiffInfo(process.env.LIFF_STAFF_SYNC_DEV)
+    this.lineUser = await getLiffInfo(process.env.LIFF_STAFF_SYNC)
+    console.log(this.lineUser)
 
 
     this.inputValidationUpdate(false, false)
@@ -170,11 +171,11 @@ export default {
          ************************ */
         const docId = await signInWithEmailAndPassword(auth, this.input.email, this.input.password).then(async success => {
           console.log(success)
-          if(success.user.uid === this.uid) {
+          if(success.user.uid) {
             // ユーザー情報取得
             const getDocRef = await getDocs( query(
               collection(db, 'staff'),
-              where('field-uid', '==', this.uid)
+              where('field-uid', '==', success.user.uid)
             ) );
 
             let docId = ''
@@ -182,6 +183,8 @@ export default {
             if(docId) return docId
           }
         }).catch(console.log)
+
+        console.log(docId)
 
         if(docId) {
           /** ************************

@@ -266,11 +266,8 @@ export default {
           for(var menu of richmenus) {
             menu.default = (menu.richMenuId === defaultRichmenu) ? true : false
           }
-
-          return richmenus
-        } else {
-          return []
         }
+        return richmenus
       } catch(e) {
         console.error(e)
       }

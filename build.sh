@@ -15,6 +15,10 @@ cd ../
 firebase login
 firebase init
 
+# Firestore コレクション等諸々作成
+node ./create_collections.js
+
+./.line/set_admin_richmenu.sh
 ./deploy.sh
 
 end_time=`date +%s`

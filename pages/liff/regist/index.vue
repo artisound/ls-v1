@@ -316,7 +316,7 @@ export default {
         // - 初回のみ
         // ===========================================
         if(!this.userDoc) {
-          const config = await getLineSetting()
+          const config = await this.getLineSetting()
           if(config.customer_added_richmenu) await this.lineApi.linkRichmenuToUser(config.customer_added_richmenu, this.userId)
           this.lineApi.sendPushMessage({
             to      : this.userId,

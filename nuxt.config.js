@@ -119,9 +119,6 @@ export default {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
-    parallel  : true, //<-追加
-    cache     : true, //<-追加
-    hardSource: true, //<-追加
   },
 
   publicRuntimeConfig: {},
