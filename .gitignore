@@ -11,8 +11,6 @@ localhost-key.pem
 localhost.pem
 
 .firebaserc
-firebase.json
-firestore.index.json
 .firebase
 functions/node_modules/
 firebase_serviceAccountKey.json
