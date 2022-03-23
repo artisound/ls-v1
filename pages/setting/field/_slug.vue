@@ -121,18 +121,6 @@
                   <span v-if="fld.hide" class="info--text mr-2">非表示</span>
                   <span v-if="fld.disabled" class="warning--text mr-2">編集不可</span>
                 </span>
-                <v-spacer></v-spacer>
-                <v-btn
-                  fab
-                  text
-                  small
-                  color="error"
-                  class="mr-2"
-                  @click="field.splice(i, 1)"
-                  title="フィールドを削除"
-                >
-                  <v-icon>mdi-trash-can</v-icon>
-                </v-btn>
               </div>
             </v-expansion-panel-header>
             <v-expansion-panel-content
@@ -224,6 +212,12 @@
                     class="d-flex pb-2 ma-0"
                     style="gap:15px;"
                   >
+                    <v-btn
+                      small
+                      color="error"
+                      class="mr-2"
+                      @click="field.splice(i, 1)"
+                    >削除</v-btn>
                     <v-spacer></v-spacer>
 
                     <v-switch
@@ -659,8 +653,10 @@ export default {
         // フィールド情報
         console.log(arrFirld)
         console.log(this.formInfo)
-        for(let i = 0; i < arrFirld.length; i++) {
-          await setDoc( doc( collection( db, this.page, 'field', this.slug ), String(i) ), arrFirld[i], { merge: true } )
+        for(let fld of arrFirld) {
+          console.log(fld)
+          if(typeof fld.condition === 'undefined') fld.condition = false
+          await setDoc( doc( collection( db, this.page, 'field', this.slug ), String(fld.num) ), fld, { merge: true } )
         }
 
         // フォーム情報
@@ -760,7 +756,7 @@ export default {
 
 <style lang="scss" scoped>
 .v-expansion-panel-header--active {
-  min-height: initial;
+  min-height: 48px;
 }
 
 .item {

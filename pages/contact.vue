@@ -134,7 +134,7 @@
                   cols="12"
                   class="d-flex"
                 >
-                  <span v-if="!current_staff['field-line_user_id']" class="red--text">従業員情報がLINEと連携されていません。</span>
+                  <!-- <span v-if="!current_staff && !current_staff['field-line_user_id']" class="red--text">従業員情報がLINEと連携されていません。</span> -->
                   <v-spacer></v-spacer>
                   <v-btn
                     :disabled="(replyMessage['field-body'] && current_staff['field-line_user_id']) ? false : true"
@@ -448,6 +448,7 @@ export default {
           staff.push( d.data() );
         })
 
+        console.log(staff)
         if(staff.length) {
           return staff[0]
         } else {
@@ -471,7 +472,7 @@ export default {
       try {
         // 現在日時のタイムスタンプ生成
         this.replyMessage['field-sended_at'] = moment().unix()
-        this.replyMessage['field-sended_by'] = this.current_staff['field-line_user_id']
+        this.replyMessage['field-sended_by'] = this.current_staff['field-line_user_id'] || '未連携スタッフ'
         // ---------------------------
         // 問い合わせルーム情報更新
         // ---------------------------

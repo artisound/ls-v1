@@ -20,7 +20,10 @@
               <v-icon style="font-size:32px;">mdi-tooltip-image</v-icon>
             </v-card>
             <v-spacer></v-spacer>
-            <div class="align-self-center">
+            <div
+              v-if="user.email.startsWith('admin')"
+              class="align-self-center"
+            >
               <v-btn
                 text
                 router
@@ -35,6 +38,17 @@
           <v-divider></v-divider>
         </template>
 
+        <template v-slot:item.detail="{ item }">
+          <v-btn
+            icon
+            small
+            depressed
+            color="primary"
+            class="d-sm-block d-none"
+            :to="`/${page}/field/${item.collection}`"
+          ><v-icon>mdi-file-edit</v-icon></v-btn>
+        </template>
+
         <template v-slot:item.created_at="{ item }">
           {{convertDatetime(item.created_at, 'YYYY/MM/DD H:mm')}}
         </template>
@@ -43,37 +57,6 @@
           {{(item.updated_at) ? convertDatetime(item.updated_at, 'YYYY/MM/DD H:mm') : '─'}}
         </template>
 
-        <template v-slot:item.actions="{ item }">
-          <v-menu offset-y>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn
-                color="normal"
-                v-bind="attrs"
-                v-on="on"
-                fab
-                small
-                depressed
-              ><v-icon>mdi-dots-vertical</v-icon></v-btn>
-            </template>
-            <v-list>
-              <v-list-item-group>
-
-                <v-list-item :to="`/${page}/field/${item.collection}`">
-                  <v-list-item-title>
-                    <v-icon class="mr-2">mdi-file-edit</v-icon>編集
-                  </v-list-item-title>
-                </v-list-item>
-
-                <v-list-item>
-                  <v-list-item-title @click="activeData=item;dialogRemove=true;">
-                    <v-icon class="mr-2">mdi-delete</v-icon>削除
-                  </v-list-item-title>
-                </v-list-item>
-
-              </v-list-item-group>
-            </v-list>
-          </v-menu>
-        </template>
       </v-data-table>
     </v-container>
 
@@ -96,13 +79,14 @@ export default {
   data() {
     return {
       page: 'setting',
+      user: this.$store.getters.user,
       // 表
       headers: [
+        { text: '',           value: 'detail',     align: 'center', sortable: false, width: '100px' },
         { text: 'フォーム名', value: 'name',       align: 'left' },
         { text: 'スラッグ',   value: 'collection', align: 'left' },
         { text: '作成日',     value: 'created_at', align: 'left' },
         { text: '最終更新日', value: 'updated_at', align: 'left' },
-        { text: '',           value: 'actions',    align: 'center', sortable: false, width: '100px' },
       ],
       search: '',
       items: [],
