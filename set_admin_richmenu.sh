@@ -1,7 +1,7 @@
 source ./.env
 
 path=`pwd`
-json_path="${path}/admin/richmenu.json"
+json_path="${path}/.line/admin/richmenu.json"
 echo $json_path
 
 # JSON書き換え（管理画面URL）
@@ -22,7 +22,7 @@ richMenuId=`echo $resp | jq ".richMenuId" | sed 's/\"//g'`
 echo "richmenu: ${richMenuId}"
 
 
-image_path="${path}/admin/richmenu.png"
+image_path="${path}/.line/admin/richmenu.png"
 echo $image_path
 # リッチメニューの画像をアップロード
 resp=`curl -v -X POST https://api-data.line.me/v2/bot/richmenu/$richMenuId/content \

@@ -68,6 +68,8 @@ for (let col_key in collections_json) {
           }
         });
       } else {
+        if (doc_key == 'line') doc_obj.friend_added_message[0].contents.footer.contents[0].uri = 'https://liff.line.me/' + process.env.LIFF_REGIST;
+
         // ドキュメント追加
         db.collection(col_key).doc(doc_key).set(doc_obj).then(async resp => {
           console.log(resp);
