@@ -22,6 +22,22 @@
               <v-card class="elevation-4 pa-5 mt-n5 mb-2" color="success" dark>
                 <v-icon style="font-size:32px;">mdi-forum</v-icon>
               </v-card>
+              <v-spacer></v-spacer>
+
+              <v-tooltip top>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    icon
+                    small
+                    color="green"
+                    class="align-self-center"
+                    @click="getDataListByBtn"
+                    v-bind="attrs"
+                    v-on="on"
+                  ><v-icon>mdi-autorenew</v-icon></v-btn>
+                </template>
+                <span>再取得</span>
+              </v-tooltip>
             </div>
 
             <v-divider></v-divider>
@@ -282,6 +298,11 @@ this.loadingTbl = false
         arrData.push(data)
       });
       return arrData;
+    },
+
+    async getDataListByBtn() {
+      this.items = []
+      this.items = await this.getDataList()
     },
 
 

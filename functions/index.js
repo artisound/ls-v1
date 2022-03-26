@@ -70,18 +70,18 @@ async function handleEvent(event) {
             data = d.data();
           });
 
-          const msg_format = [];
-          for (let msg of data.format) {
-            if (msg.type == 'json') {
-              msg.format = strToJson(msg.str_format)
-              msg_format.push(msg.format)
-            } else {
-              msg_format.push(msg)
-            }
-          }
-          functions.logger.log(JSON.stringify(msg_format));
-
           if (data && data.status == 'publish') {
+            const msg_format = [];
+            for (let msg of data.format) {
+              if (msg.type == 'json') {
+                msg.format = strToJson(msg.str_format)
+                msg_format.push(msg.format)
+              } else {
+                msg_format.push(msg)
+              }
+            }
+            functions.logger.log(JSON.stringify(msg_format));
+
             let ret = await lineMsg.sendReplyMessage({
               token   : event.replyToken,
               messages: msg_format,
@@ -94,11 +94,12 @@ async function handleEvent(event) {
                 {
                   type: 'text',
                   text: 'メッセージありがとうございます！\n\n \
-申し訳ございませんが、送信されたメッセージについてお応えできません。\n \
+申し訳ございませんが、送信されたメッセージについて答えできません。\n \
 メッセージ文を変えて送っていただくとお答えできるかもしれません。'
                 }
               ],
             });
+            functions.logger.log(JSON.stringify(ret, null, "\t"));
           }
         }
         return;
@@ -234,7 +235,7 @@ async function handleEvent(event) {
 
 
 exports.webhook = functions.region(region).https.onRequest(async (req, res) => {
-  functions.logger.log(227, req.body)
+  functions.logger.log(237, req.body)
 
   const events = req.body.events;
   if (events.length) {
@@ -357,8 +358,7 @@ exports.steppedMessage = functions.region(region).pubsub
 
   // --------------------------------------------------------------------------------------------
 
-  const today = moment().add(9, 'h').format('YYYY-MM-DD');
-  const now   = moment().add(9, 'h').format('H'); // 0 ～ 23
+  const now   = moment().add(9, 'h')
 
   /** **************************************
    * ステップ配信メッセージを取得
@@ -368,57 +368,78 @@ exports.steppedMessage = functions.region(region).pubsub
   fs01.forEach(d => messages.push( d.data()) );
   functions.logger.log(`${messages.length} case applicable`);
 
-  /** ------------------------+
-   * 取得したメッセージを検証 */
-  await Promise.all(
-    messages.map(async doc => {
+  if (messages.length) {
+
+    const lineMsg = new lineApi({
+      url: 'https://api.zp-ls.com/line/',
+      accessToken: process.env.LINE_PUBLIC_TOKEN,
+    });
+
+    /** ------------------------+
+     * 取得したメッセージを検証 */
+    await Promise.all(messages.map(async doc => {
       let timing = doc.step_timing.split('-');
       let timing_day    = timing[0] || 1; // default: 1日前
       let timing_oclock = timing[1] || 8; // default: 08:00
-      let target_registed_at = moment(today).diff(timing_day, 'days').format('YYYY-MM-DD');
+      let target_registered_at = moment(now).subtract(timing_day, 'd').format('YYYY-MM-DD');
+      functions.logger.log(moment(now).subtract(timing_day, 'd').format('YYYY-MM-DD HH:mm'));
+      functions.logger.log(384, target_registered_at);
 
       /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
        * 現在時とメッセージの送信指定時刻が同じ場合に実行
        *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
-      if(now == timing_oclock) {
+      if (now.format('H') == timing_oclock) {
         /** **************************************
          * メッセージの条件に合うユーザーを取得
          ************************************** */
-        let fs02 = await db.collection('customer').orderBy('field-line_follow_datetime').startAt(target_registed_at).endAt(target_registed_at + '\uf8ff').get();
+        let fs02 = await admin.firestore()
+          .collection('customer')
+          .orderBy('field-line_follow_datetime')
+          .startAt(target_registered_at)
+          .endAt(target_registered_at + "\uf8ff")
+          .get();
+
         const customers = [];
         fs02.forEach(d => {
           let data = d.data();
+          functions.logger.log(397, JSON.stringify(data));
           /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
-           * 友達登録済みの場合、
+           * ブロック歴なし・友達登録済み・友だちの場合
            *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
-          if( data['field-line_user_id'] && data['field-line_follow_status'] == 'follow' ) customers.push(data['field-line_user_id']);
-        });
-        functions.logger.log(`${customers.join(',')}`);
-
-        const msg_format = [];
-        for (let msg of doc.msg_format) {
-          if (msg.type == 'json') {
-            msg.format = strToJson(msg.str_format)
-            msg_format.push(msg.format)
-          } else {
-            msg_format.push(msg)
+          if(
+            data['field-line_user_id'] &&                 // LINEユーザーIDあり
+            !data['field-line_block_datetime'] &&         // ブロック歴なし
+            data['field-line_follow_status'] == 'follow'  // フォロー中
+          ) {
+            customers.push(data['field-line_user_id']);
           }
-        }
+        });
+        functions.logger.log(406, `${customers.join(',')}`);
 
-        if(customers.length) {
-          let lineRet = await lineMsg.sendPushMessage({
+        if (customers.length) {
+          // メッセージフォーマットを再生成
+          const msg_format = [];
+          for (let msg of doc.msg_format) {
+            if (msg.type == 'json') {
+              msg.format = strToJson(msg.str_format)
+              msg_format.push(msg.format)
+            } else {
+              msg_format.push(msg)
+            }
+          }
+
+          let lineRet = await lineMsg.sendMulticastMessage({
             to      : customers,
             messages: msg_format,
             notificationDisabled: doc.notification_disabled,
           });
-          functions.logger.log(lineRet);
+          functions.logger.log(418, JSON.stringify(lineRet));
         }
       }
-    })
-  );
-  return null;
-
-    // --------------------------------------------------------------------------------------------
+    }))
+    return null;
+  }
+  // --------------------------------------------------------------------------------------------
 });
 
 

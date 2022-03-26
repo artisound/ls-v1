@@ -65,25 +65,25 @@
               dark
               v-on="on"
               v-bind="attr"
-              :color="doc.reserve ? 'indigo' : 'green'"
+              :color="deliverType == 'normal' ? 'green' : 'indigo'"
               :disabled="loading"
               :loading="loading"
             >
               <v-icon class="">mdi-cloud-upload</v-icon>
-              <span class="ml-2">{{doc.reserve ? '配信予約' : '送信'}}</span>
+              <span class="ml-2">{{deliverType == 'normal' ? '送信' : '登録'}}</span>
             </v-btn>
           </template>
 
           <v-card>
             <v-card-text class="py-3">
-              <template v-if="doc.reserve">
-                このメッセージを保存します。<br>
-                指定された時間に自動的に送信されます。<br>
-              </template>
-              <template v-else>
+              <template v-if="deliverType == 'normal'">
                 このメッセージを今すぐ送信します。<br>
                 送信すると取り消すことができません。<br>
                 よろしいですか？
+              </template>
+              <template v-else>
+                このメッセージを保存します。<br>
+                指定された時間に自動的に送信されます。<br>
               </template>
             </v-card-text>
 
@@ -98,9 +98,9 @@
 
               <v-btn
                 dark
-                :color="doc.reserve ? 'indigo' : 'green'"
-                @click="saveData(true, doc.reserve)"
-              >{{doc.reserve ? '送信予約' : '送信'}}</v-btn>
+                :color="deliverType == 'normal' ? 'green' : 'indigo'"
+                @click="saveData(true, deliverType)"
+              >{{deliverType == 'normal' ? '送信' : '登録'}}</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -1140,14 +1140,18 @@ export default {
           this.$set(this.doc, 'updated_at', '')
         }
 
-        if(this.doc.reserve && this.doc.reserve_at) {
+        if(this.doc.reserve_at) {
           const [date, time] = this.doc.reserve_at.split(' ')
+          this.deliverType = 'reserve'
 
-          console.log(this.doc.reserve_at)
-
-          this.$set(this.doc, 'reserve', true)
           this.$set(this.reserve, 'date', date)
           this.$set(this.reserve, 'time', time)
+        } else if(this.doc.step_timing) {
+          const [day, oclock] = this.doc.step_timing.split('-')
+          this.deliverType = 'step'
+
+          this.$set(this.step, 'day',    Number(day))
+          this.$set(this.step, 'oclock', Number(oclock))
         }
       } catch (e) {
         console.error(e)
@@ -1438,12 +1442,12 @@ export default {
     /** *****************************************************
      * メッセージデータ保存（Firestore）
      ***************************************************** */
-    async saveData(active = false, reserve = false){
+    async saveData(active = false, deliverType = null){
       this.loading = true
       this.dialogSave = false
 
       console.log(active)
-      console.log(reserve)
+      console.log(deliverType)
 
       const saveData = {}
       for(var key in this.doc) {
@@ -1459,7 +1463,10 @@ export default {
             saveData[key] = msg_format
             break;
           case 'collection':
-            saveData[key] = this.collectionCheck ? this.collections : [];
+            saveData[key] = this.collectionCheck ? this.collections : []
+            break;
+          case 'active':
+            saveData[key] = active
             break;
           default:
             saveData[key] = this.doc[key]
@@ -1469,7 +1476,7 @@ export default {
 
       // メッセージステータス ：アクティブ
       // 予約ステータス       ：未予約 (= 今すぐ配信)
-      if(active && !reserve){
+      if(active && deliverType == 'normal'){
         const msg_format = [];
         for (let msg of this.formats) {
           if(msg.type == 'json') {
@@ -1502,7 +1509,7 @@ export default {
       }
 
       // 予約日時が空もしくは空白があれば、予約無効
-      saveData.reserve = ( !saveData.reserve_at || !saveData.reserve_at.match(/\S/g) ) ? false : true
+      // saveData.reserve = ( !saveData.reserve_at || !saveData.reserve_at.match(/\S/g) ) ? false : true
 
       try {
         console.log(saveData)
