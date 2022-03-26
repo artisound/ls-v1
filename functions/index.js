@@ -308,7 +308,7 @@ exports.scheduledMessage = functions.region(region).pubsub
       const msg_format = [];
       for (let msg of doc.msg_format) {
         if (msg.type == 'json') {
-          msg.format = this.strToJson(msg.str_format)
+          msg.format = strToJson(msg.str_format)
           msg_format.push(msg.format)
         } else {
           msg_format.push(msg)
@@ -398,7 +398,7 @@ exports.steppedMessage = functions.region(region).pubsub
         const msg_format = [];
         for (let msg of doc.msg_format) {
           if (msg.type == 'json') {
-            msg.format = this.strToJson(msg.str_format)
+            msg.format = strToJson(msg.str_format)
             msg_format.push(msg.format)
           } else {
             msg_format.push(msg)
