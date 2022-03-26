@@ -43,14 +43,15 @@ export default {
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
-    { src: '~/plugins/toast',             mode: 'client' },
-    { src: '~/plugins/firebase',          mode: 'client' },
-    { src: '~/plugins/firebase.auth.js',  mode: 'client' },
-    { src: '~/plugins/line_api',          mode: 'client' },
-    { src: '~/plugins/vue-drag-resize',   mode: 'client' },
-    { src: '~/plugins/vue-qrcode',        ssr : false },
-    { src: '~/plugins/vue-draggable',     mode: 'client' },
-    // { src: '~/plugins/persistedstate',  ssr : false    },
+    { src: '~/plugins/toast',               mode: 'client' },
+    { src: '~/plugins/firebase',            mode: 'client' },
+    { src: '~/plugins/firebase.auth.js',    mode: 'client' },
+    { src: '~/plugins/line_api',            mode: 'client' },
+    { src: '~/plugins/vue-drag-resize',     mode: 'client' },
+    { src: '~/plugins/vue-qrcode',          ssr : false },
+    { src: '~/plugins/vue-draggable',       mode: 'client' },
+    { src: '~/plugins/simple-code-editor',  mode: 'client' },
+    { src: '~/plugins/codemirror',          mode: 'client' },
   ],
 
   router: {
@@ -119,9 +120,6 @@ export default {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
-    parallel  : true, //<-追加
-    cache     : true, //<-追加
-    hardSource: true, //<-追加
   },
 
   publicRuntimeConfig: {},

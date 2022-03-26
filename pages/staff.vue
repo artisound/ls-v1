@@ -74,15 +74,16 @@
               >連携する</v-btn>
             </template>
             <v-card>
-              <vue-qr :text="'https://liff.line.me/'+liffSyncUrl+'?uid='+item.uid"></vue-qr>
+              <vue-qr :text="'https://liff.line.me/'+liffSyncUrl"></vue-qr>
 
               <v-card-text>
                 <v-btn
                   dark
                   width="100%"
                   color="orange"
-                  :href="'https://liff.line.me/'+liffSyncUrl+'?uid='+item.uid"
-                >こちら</v-btn>
+                  :href="'https://liff.line.me/'+liffSyncUrl"
+                  target="_blank"
+                >連携</v-btn>
               </v-card-text>
             </v-card>
           </v-dialog>
@@ -179,7 +180,7 @@ export default {
   data() {
     return {
       page: 'staff',
-      liffSyncUrl: process.env.LIFF_STAFF_SYNC_DEV,
+      liffSyncUrl: process.env.LIFF_STAFF_SYNC,
       // 表
       headers: [
         { text: '',         value: 'detail',        align: 'center', sortable: false, width: '48px' },

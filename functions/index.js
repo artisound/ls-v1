@@ -1,14 +1,13 @@
 'use strict';
 require('dotenv').config();
 const functions = require("firebase-functions");
-const admin     = require('firebase-admin')
+const admin     = require('firebase-admin');
 const express   = require('express');
 const moment    = require('moment');
 const axios     = require('axios');
 const request     = require('request');
 const app       = express();
 const lineApi   = require('./line_api');
-const { firebaseConfig } = require('firebase-functions');
 
 const region    = 'asia-northeast2'
 const timezone  = 'Asia/Tokyo'
@@ -58,7 +57,7 @@ async function handleEvent(event) {
               }
             ],
           });
-          functions.logger.log(JSON.stringify(ret, null, "\t"));
+          // functions.logger.log(JSON.stringify(ret, null, "\t"));
 
         } else {
           const fs = await admin.firestore()
@@ -71,12 +70,23 @@ async function handleEvent(event) {
             data = d.data();
           });
 
+          const msg_format = [];
+          for (let msg of data.format) {
+            if (msg.type == 'json') {
+              msg.format = strToJson(msg.str_format)
+              msg_format.push(msg.format)
+            } else {
+              msg_format.push(msg)
+            }
+          }
+          functions.logger.log(JSON.stringify(msg_format));
+
           if (data && data.status == 'publish') {
             let ret = await lineMsg.sendReplyMessage({
               token   : event.replyToken,
-              messages: data.format,
+              messages: msg_format,
             });
-            // functions.logger.log(JSON.stringify(ret, null, "\t"));
+            functions.logger.log(JSON.stringify(ret, null, "\t"));
           } else {
             let ret = await lineMsg.sendReplyMessage({
               token   : event.replyToken,
@@ -253,7 +263,7 @@ exports.getIdToken = functions.region(region).https.onCall(async (data, context)
 
 /** **********************************************************************************************************
  * 【定期実行処理】
- * メッセージ予約配信
+ * メッセージ - 予約配信
  ********************************************************************************************************** */
 exports.scheduledMessage = functions.region(region).pubsub
   .schedule('*/10 * * * *')
@@ -266,7 +276,6 @@ exports.scheduledMessage = functions.region(region).pubsub
   const fs = await admin.firestore()
     .collection('message')
     .where('active', '==', true)
-    .where('reserve', '==', true)
     .where('reserve_at', '==', nowDatetime)
     .get();
 
@@ -296,15 +305,25 @@ exports.scheduledMessage = functions.region(region).pubsub
       dataId        = doc.id;
       delete doc.id;
 
+      const msg_format = [];
+      for (let msg of doc.msg_format) {
+        if (msg.type == 'json') {
+          msg.format = this.strToJson(msg.str_format)
+          msg_format.push(msg.format)
+        } else {
+          msg_format.push(msg)
+        }
+      }
+
       if (doc.collection.length) {
         lineRet = await lineMsg.sendMulticastMessage({
-          to: doc.collection,
-          messages: doc.msg_format,
+          to      : doc.collection,
+          messages: msg_format,
           notificationDisabled: doc.notification_disabled,
         });
       } else {
         lineRet = await lineMsg.sendBroadcastMessage({
-          messages            : doc.msg_format,
+          messages            : msg_format,
           notificationDisabled: doc.notification_disabled,
         });
       }
@@ -327,6 +346,80 @@ exports.scheduledMessage = functions.region(region).pubsub
     // --------------------------------------------------------------------------------------------
 });
 
+/** **********************************************************************************************************
+ * 【定期実行処理】
+ * メッセージ - ステップ配信
+ ********************************************************************************************************** */
+exports.steppedMessage = functions.region(region).pubsub
+  .schedule('0 * * * *')
+  .timeZone(timezone)
+  .onRun(async () => {
+
+  // --------------------------------------------------------------------------------------------
+
+  const today = moment().add(9, 'h').format('YYYY-MM-DD');
+  const now   = moment().add(9, 'h').format('H'); // 0 ～ 23
+
+  /** **************************************
+   * ステップ配信メッセージを取得
+   ************************************** */
+  const fs01     = await admin.firestore().collection('message').where('step_timing', '!=', '').get();
+  const messages = [];
+  fs01.forEach(d => messages.push( d.data()) );
+  functions.logger.log(`${messages.length} case applicable`);
+
+  /** ------------------------+
+   * 取得したメッセージを検証 */
+  await Promise.all(
+    messages.map(async doc => {
+      let timing = doc.step_timing.split('-');
+      let timing_day    = timing[0] || 1; // default: 1日前
+      let timing_oclock = timing[1] || 8; // default: 08:00
+      let target_registed_at = moment(today).diff(timing_day, 'days').format('YYYY-MM-DD');
+
+      /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+       * 現在時とメッセージの送信指定時刻が同じ場合に実行
+       *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
+      if(now == timing_oclock) {
+        /** **************************************
+         * メッセージの条件に合うユーザーを取得
+         ************************************** */
+        let fs02 = await db.collection('customer').orderBy('field-line_follow_datetime').startAt(target_registed_at).endAt(target_registed_at + '\uf8ff').get();
+        const customers = [];
+        fs02.forEach(d => {
+          let data = d.data();
+          /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+           * 友達登録済みの場合、
+           *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
+          if( data['field-line_user_id'] && data['field-line_follow_status'] == 'follow' ) customers.push(data['field-line_user_id']);
+        });
+        functions.logger.log(`${customers.join(',')}`);
+
+        const msg_format = [];
+        for (let msg of doc.msg_format) {
+          if (msg.type == 'json') {
+            msg.format = this.strToJson(msg.str_format)
+            msg_format.push(msg.format)
+          } else {
+            msg_format.push(msg)
+          }
+        }
+
+        if(customers.length) {
+          let lineRet = await lineMsg.sendPushMessage({
+            to      : customers,
+            messages: msg_format,
+            notificationDisabled: doc.notification_disabled,
+          });
+          functions.logger.log(lineRet);
+        }
+      }
+    })
+  );
+  return null;
+
+    // --------------------------------------------------------------------------------------------
+});
 
 
 /** **********************************************************************************************************
@@ -393,3 +486,12 @@ exports.scheduledReserve = functions.region(region).pubsub
 
     // --------------------------------------------------------------------------------------------
 });
+
+
+function strToJson(str) {
+  try {
+    return JSON.parse(str)
+  } catch (e) {
+    return {}
+  }
+}

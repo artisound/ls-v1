@@ -76,10 +76,9 @@
 </template>
 
 <script>
-import { doc, collection, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy } from "firebase/firestore";
-import { getFunctions, httpsCallable } from "firebase/functions";
-import { getAuth, signInAnonymously, signInWithEmailAndPassword, fetchSignInMethodsForEmail, EmailAuthProvider, linkWithCredential, signOut, deleteUser } from "firebase/auth";
-import { firebaseApp, auth, db } from '~/plugins/firebase.js';
+import { doc, collection, getDoc, getDocs, addDoc, updateDoc, query, where, orderBy } from "firebase/firestore";
+import { signInWithEmailAndPassword, signOut, deleteUser } from "firebase/auth";
+import { auth, db } from '~/plugins/firebase.js';
 import { lineMsgApi } from '~/plugins/line_api.js';
 import moment from 'moment';
 
@@ -130,18 +129,16 @@ export default {
   },
   mounted: async function () {
     this.overlay = true
-    console.log(this.$route.query)
 
     // ==================================
     // ① LIFF ユーザー情報取得
     // ==================================
-    this.liffInfo    = await getLiffInfo(process.env.LIFF_CONTACT_DEV)
+    this.liffInfo = await getLiffInfo(process.env.LIFF_CONTACT)
 
     // ==================================
     // ② Firebase ログイン
     // ==================================
     this.login = await signInWithEmailAndPassword(auth, process.env.LIFF_USER_ID, process.env.LIFF_USER_PW)
-
 
     if(this.login) {
       // ==================================
@@ -298,7 +295,7 @@ export default {
       this.loading           = true   // ローディング開始
       this.dialogSendMessage = false  // メッセージ送信ダイアログを閉じる
       // 匿名ログイン
-      this.login = await signInAnonymously(auth)
+      // this.login = await signInAnonymously(auth)
 
       const now = moment().format('YYYY-MM-DD HH:mm:ss')
 
@@ -439,9 +436,6 @@ export default {
           console.log(sendMsgAdmin)
           console.log(docRef)
         }
-
-        // 匿名ログアウト＆匿名アカウント削除
-        this.userLogout()
 
         // LIFF画面を閉じる
         liff.closeWindow()

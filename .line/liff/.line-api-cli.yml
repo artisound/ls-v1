@@ -1,5 +1,9 @@
 channel:
   id: 1656553601
   secret: 7ec43e5faf5c0b0f3ebd5db8c3aab219
+<<<<<<< HEAD
   accessToken: >-
     nEiFR6u0BCod9lr/InFniRF/QAs4TbEHkHTNBOUK9VlWfhdsy8qcm2qcspoOMPo0FvnYZKELsN7cCe3iip/HCk8Iwmwo6FXBpBd+oCCuxmBLUQN73EuPVccK4lg8l05S3W/7xSAVhFhwb36HPWu1LY9PbdgDzCFqoOLOYbqAITQ=
+=======
+  accessToken: aTs+Yu7ryUzEtXAPlh2rJsxoBFle9gGtpH7SW1TqG+2nEnSqwDqSRbYRqDGaLA/IDBZ6AXP0GLMwC2ELkDptmaNqVEdLGtGgfi97J154Y+sizQVR7/Gs77DRDFcbRjPK7PJtRihcgnPoLHm2NSfSsI9PbdgDzCFqoOLOYbqAITQ=
+>>>>>>> origin/master

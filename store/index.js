@@ -30,14 +30,20 @@ export const actions = {
       const qs  = await getDocs(q);
 
       const staff = {};
-      qs.forEach(d => staff[d.id] = d.data() );
+      if (!login.user.email.startsWith('admin@')) {
+        qs.forEach(d => staff[d.id] = d.data() );
 
-      if (!Object.keys(staff).length && !login.user.email.startsWith('admin@')) {
-        await signOut(auth)
-        throw {
-          status: 'error',
-          message: 'スタッフがみつかりませんでした。'
+        if (!Object.keys(staff).length) {
+          await signOut(auth)
+          throw {
+            status: 'error',
+            message: 'スタッフがみつかりませんでした。'
+          }
+        } else {
+          return login.user
         }
+      } else {
+        return login.user
       }
     }
     // })

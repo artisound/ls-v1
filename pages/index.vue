@@ -1,21 +1,5 @@
 <template>
   <v-container>
-
-    <v-row>
-      <v-col cols="12" lg="4">
-        <v-card class="mt-6">
-          <v-card-title>ようこそ、〇〇様</v-card-title>
-          <!-- <div class="d-flex flex-wrap grow px-4 p-2">
-            <v-card class="elevation-4 pa-5 mt-n5 mb-2" color="success" dark>
-              <v-icon style="font-size:32px;">mdi-account-group</v-icon>
-            </v-card>
-            <v-spacer></v-spacer>
-          </div>
-          <v-divider></v-divider> -->
-        </v-card>
-      </v-col>
-    </v-row>
-
     <v-row>
 
       <v-col cols="12" lg="3" sm="6" v-for="(ins, i) in insight" :key="i">

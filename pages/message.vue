@@ -54,11 +54,11 @@
         </template>
 
         <template v-slot:item.reserve="{ item }">
-          <v-icon v-if="item.reserve" color="primary" dark>mdi-check</v-icon>
+          <v-icon v-if="item.reserve_at" color="primary" dark>mdi-check</v-icon>
         </template>
 
         <template v-slot:item.reserve_at="{ item }">
-          {{(item.reserve_at) ? convertDatetime(item.reserve_at, 'YYYY/MM/DD H:mm') : '─'}}
+          {{outputReserveOrStep(item)}}
         </template>
 
         <template v-slot:item.sended_at="{ item }">
@@ -84,7 +84,7 @@
             <v-list>
               <v-list-item-group>
 
-                <v-list-item v-if="!item.sended_at">
+                <v-list-item v-if="!item.sended_at && !item.step_timing">
                   <v-list-item-title @click="activeData=item;dialogSendMessage=true;">
                     <v-icon class="mr-2">mdi-send</v-icon>送信
                   </v-list-item-title>
@@ -257,6 +257,19 @@ this.loadingTbl = false
       return moment(datetime).format(format);
     },
 
+    outputReserveOrStep(item) {
+      if (item.reserve_at) {
+        return this.convertDatetime(item.reserve_at, 'YYYY/MM/DD H:mm')
+      } else if (item.step_timing) {
+        const timing = item.step_timing.split('-')
+        const day    = timing[0] ? `登録から${timing[0]}日後` : '';
+        const oclock = timing[1] ? `${timing[1]}時` : '';
+        return day + 'の' + oclock
+      } else {
+        return '─'
+      }
+    },
+
     /** *****************************************************
      * データ一覧取得
      ***************************************************** */
@@ -312,13 +325,33 @@ this.loadingTbl = false
 
       console.log(lineApi)
 
+
+      const msg_format = [];
+      for (let msg of this.activeData.msg_format) {
+        if(msg.type == 'json') {
+          msg.format = this.strToJson(msg.str_format)
+          msg_format.push(msg.format)
+        } else {
+          msg_format.push(msg)
+        }
+      }
+
+
+      // メッセージ送信
       let resSendMsg;
       if(!this.activeData.collection.length){
-        resSendMsg = await lineApi.sendBroadcastMessage({
-          messages: this.activeData.msg_format,
+        resSendMsg = await lineApi.sendMulticastMessage({
+          to      : this.activeData.collection,
+          messages: msg_format,
+          notificationDisabled: saveData.notification_disabled,
         });
-        console.log(resSendMsg)
+      } else {
+        resSendMsg = await this.lineApi.sendBroadcastMessage({
+          messages: msg_format,
+          notificationDisabled: saveData.notification_disabled,
+        });
       }
+      console.log(resSendMsg)
 
       let resKeys = Object.keys(resSendMsg)
       if(!resKeys.length) {
@@ -329,7 +362,7 @@ this.loadingTbl = false
         try {
           this.activeData.sended_at = moment().format('YYYY-MM-DD HH:mm:ss')
 
-          await setDoc(doc(collection(db, this.page), this.activeData.id), this.activeData)
+          await setDoc(doc(collection(db, this.page), this.activeData.id), this.activeData, { merge: true })
           console.log('sended!')
         } catch (e) {
           console.error("Error adding document: ", e)
@@ -339,8 +372,6 @@ this.loadingTbl = false
           position: 'bottom-right'
         })
       }
-
-      // this.input.sended_at = moment().format('YYYY-MM-DD HH:mm:ss')
 
       this.activeData        = {}
       this.loadingSendMsg    = false
@@ -368,6 +399,9 @@ this.loadingTbl = false
       if(item.sended_at) {
         retObj['color'] = 'green';
         retObj['status'] = '配信済';
+      } else if(item.step_timing) {
+        retObj['color'] = 'pink';
+        retObj['status'] = 'ステップ配信';
       } else {
         if(item.active) {
           retObj['color'] = 'indigo';

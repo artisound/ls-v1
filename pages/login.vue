@@ -131,7 +131,7 @@ export default {
       if(e.keyCode === 13) {
         document.getElementById('btnLogin').click()
       }
-    }
+    },
   }
 }
 </script>

@@ -486,6 +486,26 @@
               </v-row>
             </v-card-text>
 
+            <!-- json -->
+            <v-card-text v-if="fmt.type == 'json'">
+              <v-card>
+                <codemirror
+                  v-model="fmt.str_format"
+                  :options="{
+                    tabSize: 4,
+                    mode: 'text/javascript',
+                    // theme: 'base16-dark',
+                    lineNumbers: true,
+                    line: true,
+                  }"
+                ></codemirror>
+              </v-card>
+
+              <div class="d-flex mt-3">
+                <v-spacer></v-spacer>
+                <v-btn @click="fmt.str_format = adjustJsonStr(fmt.str_format)">整形</v-btn>
+              </div>
+            </v-card-text>
         </v-card>
 
         <v-btn
@@ -585,6 +605,7 @@
 import { doc, collection, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
 import { db } from '~/plugins/firebase.js';
 import moment from 'moment'
+
 export default {
   props: ['page'],
   head() {
@@ -613,8 +634,9 @@ export default {
         { text: 'ボタン',         value: 'template', icon: 'mdi-gesture-tap-button',      disabled: false },
         { text: 'スタンプ',       value: 'sticker',  icon: 'mdi-emoticon-happy-outline',  disabled: false },
         { text: '位置情報',       value: 'location', icon: 'mdi-map-marker',              disabled: false },
-        { text: 'イメージマップ', value: 'imagemap', icon: 'mdi-view-grid',               disabled: true },
-        { text: 'カルーセル',     value: 'carousel', icon: 'mdi-view-carousel-outline',   disabled: true },
+        // { text: 'イメージマップ', value: 'imagemap', icon: 'mdi-view-grid',               disabled: true },
+        // { text: 'カルーセル',     value: 'carousel', icon: 'mdi-view-carousel-outline',   disabled: true },
+        { text: 'JSON',           value: 'json',     icon: 'mdi-code-json',               disabled: false },
       ],
 
       // images
@@ -871,6 +893,12 @@ export default {
           }
           baseFormat['actions']  = []
           break;
+        // -----------------------
+        // JSON
+        case 'json':
+          baseFormat['str_format'] = ''
+          baseFormat['format'] = ''
+          break;
       }
       this.$set(this.formats, key, baseFormat)
     },
@@ -901,6 +929,20 @@ export default {
     },
 
 
+    /** ****************************************
+     * JSON文字列を整形
+     **************************************** */
+    adjustJsonStr(json) {
+      let obj;
+      try {
+        obj = JSON.parse(json)
+      } catch (e) {
+        obj = json
+      }
+      return JSON.stringify(obj, null, "\t")
+    },
+
+
     /** *****************************************************
      * メッセージデータ保存（Firestore）
      ***************************************************** */
@@ -910,8 +952,23 @@ export default {
 
       const saveData = {}
       for(var key in this.doc) {
-        saveData[key] = (key == 'format') ? this.formats : this.doc[key]
+        switch(key) {
+          case 'format':
+            const msg_format = [];
+            for (let msg of this.formats) {
+              if(msg.type == 'json') {
+                msg.format = this.strToJson(msg.str_format)
+              }
+              msg_format.push(msg)
+            }
+            saveData[key] = msg_format
+            break;
+          default:
+            saveData[key] = this.doc[key]
+            break;
+        }
       }
+      console.log(saveData)
 
       try {
         saveData.created_at = saveData.created_at || moment().format('YYYY-MM-DD HH:mm:ss');
@@ -934,6 +991,17 @@ export default {
       }
 
       this.loading = false
+    },
+
+    /** ****************************************
+     * JSON文字列をJSON形式に変換
+     **************************************** */
+    strToJson(str) {
+      try {
+        return JSON.parse(str)
+      } catch (e) {
+        return {}
+      }
     },
 
   },

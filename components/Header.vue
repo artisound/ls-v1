@@ -218,9 +218,9 @@ export default {
     }
   },
   watch: {
-      '$route': function(to, from) {
-        console.log(to)
-      }
+    '$route': function(to, from) {
+      console.log(to)
+    }
   },
   mounted: async function() {
   },

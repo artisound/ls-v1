@@ -40,52 +40,6 @@
           <v-chip v-else-if="item['field-line_follow_status']=='unfollow'" color="red" dark>ブロック中</v-chip>
           <v-chip v-else color="orange" dark>不明</v-chip>
         </template>
-
-        <template v-slot:item.actions="{ item }">
-          <v-menu offset-y>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn
-                color="normal"
-                v-bind="attrs"
-                v-on="on"
-                fab
-                small
-                depressed
-              ><v-icon>mdi-dots-vertical</v-icon></v-btn>
-            </template>
-            <v-list>
-              <v-list-item-group>
-
-                <v-list-item class="d-flex d-sm-none" :to="`/${page}/${item.id}`">
-                  <v-list-item-title>
-                    <v-icon class="mr-2">mdi-file</v-icon>詳細
-                  </v-list-item-title>
-                </v-list-item>
-
-                <!--
-                <v-list-item v-if="item.status" :to="`/${page}/edit?mode=edit&id=${item.id}`">
-                  <v-list-item-title>
-                    <v-icon class="mr-2">mdi-file-edit</v-icon>編集
-                  </v-list-item-title>
-                </v-list-item>
-
-                <v-list-item :to="`/${page}/edit?mode=copy&id=${item.id}`">
-                  <v-list-item-title>
-                    <v-icon class="mr-2">mdi-file-replace</v-icon>複製
-                  </v-list-item-title>
-                </v-list-item>
-                -->
-
-                <v-list-item >
-                  <v-list-item-title @click="activeData=item;dialogRemove=true;">
-                    <v-icon class="mr-2">mdi-delete</v-icon>削除
-                  </v-list-item-title>
-                </v-list-item>
-
-              </v-list-item-group>
-            </v-list>
-          </v-menu>
-        </template>
       </v-data-table>
     </v-container>
 
@@ -152,12 +106,12 @@ export default {
       page: 'customer',
       // 表
       headers: [
-        { text: '',           value: 'detail',  align: 'center', sortable: false, width: '100px' },
+        // { text: '',           value: 'detail',  align: 'center', sortable: false, width: '100px' },
         { text: 'お客様名',   value: 'field-name',    align: 'center', sortable: false },
         { text: '性別',       value: 'field-gender',  align: 'center' },
         { text: 'お住まい',   value: 'field-address', align: 'center' },
         { text: 'ステータス', value: 'field-status',  align: 'center' },
-        { text: '',           value: 'actions', align: 'center', sortable: false, width: '100px' },
+        // { text: '',           value: 'actions', align: 'center', sortable: false, width: '100px' },
       ],
       search: '',
       items: [],

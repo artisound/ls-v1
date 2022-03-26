@@ -121,57 +121,64 @@
           v-for="(fmt, key) in formats" :key="key"
           class="mb-3"
         >
-            <v-card-title>
-              <v-btn-toggle
-                dark
-                dense
-                mandatory
-                v-model="fmt.type"
-                @change="changeMessageFormat(key, fmt.type)"
+            <div class="d-flex flex-column">
+              <v-col
+                cols="12"
+                class="d-flex"
               >
-                <v-tooltip
-                  top
-                  v-for="(type, i) in msg_type"
-                  :key="i"
+                <v-btn
+                  fab
+                  icon
+                  x-small
+                  :disabled="(key == 0) ? true : false"
+                  @click="changeOrderFormat(key, 'down')"
+                ><v-icon>mdi-chevron-up</v-icon></v-btn>
+
+                <v-btn
+                  fab
+                  icon
+                  x-small
+                  :disabled="(formats.length == key + 1) ? true : false"
+                  @click="changeOrderFormat(key, 'up')"
+                ><v-icon>mdi-chevron-down</v-icon></v-btn>
+
+                <v-spacer></v-spacer>
+
+                <v-btn
+                  fab
+                  icon
+                  x-small
+                  :disabled="(formats.length > 1) ? false : true"
+                  @click="deleteFormat"
+                ><v-icon>mdi-close</v-icon></v-btn>
+              </v-col>
+
+              <v-col cols="12" class="pt-0">
+                <v-btn-toggle
+                  dark
+                  dense
+                  mandatory
+                  v-model="fmt.type"
+                  @change="changeMessageFormat(key, fmt.type)"
                 >
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      :value="type.value"
-                      :disabled="type.disabled"
-                      v-bind="attrs"
-                      v-on="on"
-                    ><v-icon v-text="type.icon"></v-icon></v-btn>
-                  </template>
-                  <span v-text="type.text"></span>
-                </v-tooltip>
-              </v-btn-toggle>
-
-              <v-spacer></v-spacer>
-
-              <v-btn
-                fab
-                text
-                small
-                :disabled="(key == 0) ? true : false"
-                @click="changeOrderFormat(key, 'down')"
-              ><v-icon>mdi-chevron-up</v-icon></v-btn>
-
-              <v-btn
-                fab
-                text
-                small
-                :disabled="(formats.length == key + 1) ? true : false"
-                @click="changeOrderFormat(key, 'up')"
-              ><v-icon>mdi-chevron-down</v-icon></v-btn>
-
-              <v-btn
-                fab
-                text
-                small
-                :disabled="(formats.length > 1) ? false : true"
-                @click="deleteFormat"
-              ><v-icon>mdi-close</v-icon></v-btn>
-            </v-card-title>
+                  <v-tooltip
+                    top
+                    v-for="(type, i) in msg_type"
+                    :key="i"
+                  >
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                        :value="type.value"
+                        :disabled="type.disabled"
+                        v-bind="attrs"
+                        v-on="on"
+                      ><v-icon v-text="type.icon"></v-icon></v-btn>
+                    </template>
+                    <span v-text="type.text"></span>
+                  </v-tooltip>
+                </v-btn-toggle>
+              </v-col>
+            </div>
 
             <v-divider></v-divider>
 
@@ -524,6 +531,26 @@
               </v-row>
             </v-card-text>
 
+            <!-- json -->
+            <v-card-text v-if="fmt.type == 'json'">
+              <v-card>
+                <codemirror
+                  v-model="fmt.str_format"
+                  :options="{
+                    tabSize: 4,
+                    mode: 'text/javascript',
+                    // theme: 'base16-dark',
+                    lineNumbers: true,
+                    line: true,
+                  }"
+                ></codemirror>
+              </v-card>
+
+              <div class="d-flex mt-3">
+                <v-spacer></v-spacer>
+                <v-btn @click="fmt.str_format = adjustJsonStr(fmt.str_format)">整形</v-btn>
+              </div>
+            </v-card-text>
         </v-card>
 
         <v-btn
@@ -556,15 +583,20 @@
           <v-card-text>
             <v-radio-group
               row
-              v-model="doc.reserve"
+              v-model="deliverType"
               hide-details="auto"
               class="ma-0 pa-0"
             >
-              <v-radio label="今すぐ配信" :value="false"></v-radio>
-              <v-radio label="予約配信" :value="true"></v-radio>
+              <template v-for="(item, i) in deliverTypeItems">
+                <v-radio
+                  :key="i"
+                  :label="item.text"
+                  :value="item.value"
+                ></v-radio>
+              </template>
             </v-radio-group>
 
-            <v-row v-if="doc.reserve" class="d-flex mt-3">
+            <v-row v-if="deliverType == 'reserve'" class="d-flex mt-3">
               <v-col cols="6">
                 <v-menu
                   v-model="menu.reserve.date"
@@ -631,6 +663,32 @@
                 </v-menu>
               </v-col>
             </v-row>
+
+
+            <v-row v-if="deliverType == 'step'" class="d-flex mt-3">
+              <v-col cols="6">
+                <v-select
+                  dense
+                  outlined
+                  prefix="登録"
+                  suffix="日後"
+                  hide-details="auto"
+                  v-model="step.day"
+                  :items="[1, 2, 3, 4, 5, 6, 7]"
+                ></v-select>
+              </v-col>
+              <v-col cols="6">
+                <v-select
+                  dense
+                  outlined
+                  suffix="時"
+                  hide-details="auto"
+                  v-model="step.oclock"
+                  :items="[ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 ]"
+                  :value="8"
+                ></v-select>
+              </v-col>
+            </v-row>
           </v-card-text>
 
           <v-divider></v-divider>
@@ -641,6 +699,7 @@
               hide-details="auto"
               class="ma-0 pa-0"
               v-model="collectionCheck"
+              :disabled="collectionCheckDisabled"
             ></v-switch>
 
             <template v-if="collectionCheck">
@@ -732,6 +791,16 @@
           <v-divider></v-divider>
 
           <v-card-text>
+            <div class="d-flex">
+              <v-spacer></v-spacer>
+              <v-btn @click="sendTestMessage">テストメッセージ送信</v-btn>
+            </div>
+          </v-card-text>
+
+<!--
+          <v-divider></v-divider>
+
+          <v-card-text>
             <v-textarea
               dense
               outlined
@@ -740,6 +809,7 @@
               v-model="doc.remarks"
             ></v-textarea>
           </v-card-text>
+-->
         </v-card>
       </v-col>
     </v-sheet>
@@ -748,6 +818,7 @@
 
     <v-card
       width="400"
+      max-width="calc(100vw - 30px)"
       style="position:fixed;bottom:50px;right:10px;"
     >
       <v-expansion-panels
@@ -786,6 +857,7 @@ import { doc, collection, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc,
 import { lineMsgApi } from '~/plugins/line_api.js';
 import { db } from '~/plugins/firebase.js';
 import moment from 'moment'
+
 export default {
   props: ['page'],
   head() {
@@ -825,8 +897,9 @@ export default {
         { text: 'ボタン',         value: 'template', icon: 'mdi-gesture-tap-button',      disabled: false },
         { text: 'スタンプ',       value: 'sticker',  icon: 'mdi-emoticon-happy-outline',  disabled: false },
         { text: '位置情報',       value: 'location', icon: 'mdi-map-marker',              disabled: false },
-        { text: 'イメージマップ', value: 'imagemap', icon: 'mdi-view-grid',               disabled: true },
-        { text: 'カルーセル',     value: 'carousel', icon: 'mdi-view-carousel-outline',   disabled: true },
+        // { text: 'イメージマップ', value: 'imagemap', icon: 'mdi-view-grid',               disabled: true },
+        // { text: 'カルーセル',     value: 'carousel', icon: 'mdi-view-carousel-outline',   disabled: true },
+        { text: 'JSON',           value: 'json',     icon: 'mdi-code-json',               disabled: false },
       ],
 
       // images
@@ -846,30 +919,42 @@ export default {
       // stickers
       stickerTab: null,
 
+      // 配信区分
+      deliverTypeItems: [
+        { text: '今すぐ配信',   value: 'normal' },
+        { text: '予約配信',     value: 'reserve' },
+        { text: 'ステップ配信', value: 'step' },
+      ],
+      deliverType: 'normal',
+
+      // ドキュメントデータ
       doc: {
-        title     : '',
-        msg_format: [],
-        collection: [],
-        remarks   : '',
-        active    : false,
-        reserve   : false,
-        sended_at : '',
-        reserve_at: '',
-        created_at: '',
-        updated_at: '',
+        title       : '',
+        msg_format  : [],
+        collection  : [],
+        remarks     : '',
+        active      : false,
+        step_timing : '',
+        sended_at   : '',
+        reserve_at  : '',
+        created_at  : '',
+        updated_at  : '',
         notification_disabled: false,
       },
       formats: [
         { type: 'text', text: '' },
       ],
+      fmt_json: '',
       collections: [],
 
-      reserve:{
-        date: '',
-        time: '',
-      },
+      // 予約配信日時
+      reserve:{ date: '', time: '' },
+
+      // ステップ配信日時
+      step: { day: 1, oclock: 8 },
 
       collectionCheck: false,
+      collectionCheckDisabled: false,
 
       files: [],
       isDragging: false,
@@ -883,23 +968,67 @@ export default {
     },
 
     'doc.reserve': function(aft) {
-      if(!aft) this.doc.reserve_at = ''
+      if(!aft) this.$set(this.doc, 'reserve_at', '')
     },
+
+    /** *******************************************
+     * 予約配信日時が入力されたときの処理
+     ******************************************* */
     reserve: {
       handler: function (aft) {
-        this.doc.reserve_at = `${aft.date} ${aft.time}`
+        this.$set(this.doc, 'reserve_at', `${aft.date} ${aft.time}`)
+      },
+      deep: true,
+    },
+
+    /** *******************************************
+     * ステップ配信日時が入力されたときの処理
+     ******************************************* */
+    step: {
+      handler: function (aft) {
+        this.$set(this.doc, 'step_timing', `${aft.day}-${aft.oclock}`)
       },
       deep: true,
     },
 
     collectionCheck(aft) {
       if(!aft) this.$set(this.doc, 'collection', [])
+    },
+
+    /** *******************************************
+     * 配信タイプが切り替わったときの処理
+     ******************************************* */
+    deliverType(aft) {
+      switch(aft) {
+        case 'normal':
+          // ステップメッセージタイミングクリア
+          this.$set(this.doc, 'step_timing',  '')
+          // 配信予約日クリア
+          this.$set(this.doc, 'reserve_at',   '')
+          this.collectionCheckDisabled = false
+          break;
+        case 'reserve':
+          // ステップメッセージタイミングクリア
+          this.$set(this.doc, 'step_timing',  '')
+          this.$set(this.doc, 'reserve_at',  `${this.reserve.date} ${this.reserve.time}`)
+          this.collectionCheckDisabled = false
+          break;
+        case 'step':
+          // 配信予約日クリア
+          this.$set(this.doc, 'reserve_at',  '')
+          this.$set(this.doc, 'step_timing', `${this.step.day}-${this.step.oclock}`)
+          this.collectionCheck = false
+          this.collectionCheckDisabled = true
+          break;
+      }
     }
   },
 
-  mounted: async function() {
+  created: function() {
     console.clear()
+  },
 
+  mounted: async function() {
     // --------------------------------
     // LINE Messaging API実行
     // --------------------------------
@@ -972,8 +1101,16 @@ export default {
 
     // 画像データ全件取得
     this.images = await this.getImagesList();
+
+
+    if(this.$route.params.slug === 'new') {
+      this.$set(this.doc, 'active', false)
+    }
   },
   methods: {
+    highlighter(code) {
+      return highlight(code, languages.js); //returns html
+    },
     /** *****************************************************
      * データ取得
      * @param {String} docId      - ドキュメントID
@@ -1180,9 +1317,9 @@ export default {
         case 'template':
           baseFormat['altText']   = 'タイトル'
           baseFormat['template']  = {
-            type         : 'buttons',
-            title        : '',
-            text         : '',
+            type  : 'buttons',
+            title : '',
+            text  : '',
             actions: [
               {
                 type : 'message',
@@ -1217,6 +1354,12 @@ export default {
           }
           baseFormat['actions']  = []
           break;
+        // -----------------------
+        // JSON
+        case 'json':
+          baseFormat['str_format'] = ''
+          baseFormat['format'] = ''
+          break;
       }
       this.$set(this.formats, key, baseFormat)
     },
@@ -1246,6 +1389,51 @@ export default {
       this.dialogSelectImage = false
     },
 
+    /** *****************************************************
+     * テストメッセージ
+     ***************************************************** */
+    async sendTestMessage() {
+      this.loading = true;
+      const msgApi = new lineMsgApi({
+        url          : 'https://api.zp-ls.com/line/',
+        accessToken  : process.env.LINE_ADMIN_TOKEN,
+      });
+
+
+      const staffs = await this.getDataList('staff')
+      let sendToUser;
+      for (let staff of staffs) {
+        if(staff['field-uid'] && staff['field-uid'] == this.$store.getters.user.uid) {
+          sendToUser = staff['field-line_user_id']
+          break;
+        }
+      }
+
+      const msg_format = [];
+      for (let msg of this.formats) {
+        if(msg.type == 'json') {
+          msg.format = this.strToJson(msg.str_format)
+          msg_format.push(msg.format)
+        } else {
+          msg_format.push(msg)
+        }
+      }
+      let sendMsg = await msgApi.sendPushMessage({
+        to      : sendToUser,
+        messages: msg_format,
+      });
+      console.log(sendMsg)
+      if(!Object.keys(sendMsg).length) {
+        this.$toast.success(`正常に送信されました。`, {
+          position: 'bottom-right'
+        })
+      } else {
+        this.$toast.error(`メッセージの送信に失敗しました。\nメッセージの構成を見直してください。`, {
+          position: 'bottom-right'
+        })
+      }
+      this.loading = false;
+    },
 
     /** *****************************************************
      * メッセージデータ保存（Firestore）
@@ -1261,13 +1449,17 @@ export default {
       for(var key in this.doc) {
         switch(key) {
           case 'msg_format':
-            saveData[key] = this.formats
+            const msg_format = [];
+            for (let msg of this.formats) {
+              if(msg.type == 'json') {
+                msg.format = this.strToJson(msg.str_format)
+              }
+              msg_format.push(msg)
+            }
+            saveData[key] = msg_format
             break;
           case 'collection':
             saveData[key] = this.collectionCheck ? this.collections : [];
-            break;
-          case 'active':
-            saveData[key] = active
             break;
           default:
             saveData[key] = this.doc[key]
@@ -1278,6 +1470,15 @@ export default {
       // メッセージステータス ：アクティブ
       // 予約ステータス       ：未予約 (= 今すぐ配信)
       if(active && !reserve){
+        const msg_format = [];
+        for (let msg of this.formats) {
+          if(msg.type == 'json') {
+            msg.format = this.strToJson(msg.str_format)
+            msg_format.push(msg.format)
+          } else {
+            msg_format.push(msg)
+          }
+        }
         console.log(saveData)
         // --------------------------------
         // LINE Messaging API実行
@@ -1285,13 +1486,13 @@ export default {
         if(saveData.collection.length){
           let sendMsg = await this.lineApi.sendMulticastMessage({
             to                  : saveData.collection,
-            messages            : saveData.msg_format,
+            messages            : msg_format,
             notificationDisabled: saveData.notification_disabled,
           });
           console.log(sendMsg)
         } else {
           let sendMsg = await this.lineApi.sendBroadcastMessage({
-            messages            : saveData.msg_format,
+            messages            : msg_format,
             notificationDisabled: saveData.notification_disabled,
           });
           console.log(sendMsg)
@@ -1327,6 +1528,30 @@ export default {
 
       this.loading = false
     },
+
+    /** ****************************************
+     * JSON文字列をJSON形式に変換
+     **************************************** */
+    strToJson(str) {
+      try {
+        return JSON.parse(str)
+      } catch (e) {
+        return {}
+      }
+    },
+
+    /** ****************************************
+     * JSON文字列を整形
+     **************************************** */
+    adjustJsonStr(json) {
+      let obj;
+      try {
+        obj = JSON.parse(json)
+      } catch (e) {
+        obj = json
+      }
+      return JSON.stringify(obj, null, "\t")
+    }
 
   },
   asyncData() {

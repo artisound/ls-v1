@@ -105,6 +105,7 @@
                   v-model="menuBase.chatBarText"
                 ></v-text-field>
               </v-card-text>
+              {{menuBase.size.height}}
             </v-col>
 
             <v-divider vertical></v-divider>
@@ -194,7 +195,7 @@
                         outlined
                         type="number"
                         min="50"
-                        :max="(menuBase.width / 5) - act.bounds.x"
+                        :max="(menuBase.size.width / 5) - act.bounds.x"
                         label="幅(領域)"
                         hide-details="auto"
                         class="mb-3"
@@ -205,7 +206,7 @@
                         outlined
                         type="number"
                         min="50"
-                        :max="(menuBase.height / 5) - act.bounds.y"
+                        :max="(menuBase.size.height / 5) - act.bounds.y"
                         label="高さ(領域)"
                         hide-details="auto"
                         class="mb-3"
@@ -559,7 +560,7 @@ export default {
         chatBarText: this.menuBase.chatBarText,
         size: {
           width : 2500,
-          height: this.menuBase.height
+          height: this.menuBase.size.height
         },
       }
 
@@ -587,6 +588,7 @@ export default {
         // ------------------------
         // リッチメニュー登録
         let newRichmenu = await this.lineApi.createRichmenu(menuFormat);
+        console.log(newRichmenu)
 
         // ------------------------
         // エラー時、処理終了
@@ -603,6 +605,8 @@ export default {
           richMenuId : newRichmenuId,
           base64image: this.rmImg.split(',')[1],
         });
+
+        console.log(setImgResp)
 
         // --------------------------------------
         // エラー時、リッチメニュー削除処理終了
