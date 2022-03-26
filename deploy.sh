@@ -1,5 +1,13 @@
 start_time=`date +%s`
 
+# パッケージ セットアップ
+yarn install
+
+# Firebase Functions
+cd ./functions
+yarn install
+cd ../
+
 if [ $# = 1 ]; then
     echo "Only $1 deploy"
   if [ $1 = "hosting" ]; then
