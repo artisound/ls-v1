@@ -5,9 +5,6 @@ const admin     = require('firebase-admin');
 const express   = require('express');
 const moment    = require('moment');
 const axios     = require('axios');
-const request   = require('request');
-const app       = express();
-const lineApi   = require('./line_api');
 const line      = require('@line/bot-sdk');
 const middleware = line.middleware;
 
@@ -276,11 +273,6 @@ exports.scheduledMessage = functions.region(region).pubsub
     //   return doc.data();
     // });
 
-    const lineMsg = new lineApi({
-      url        : 'https://api.zp-ls.com/line/',
-      accessToken: process.env.LINE_PUBLIC_TOKEN,
-    });
-
     let dataId, lineRet;
     await Promise.all(messages.map(async doc => {
       doc.sended_at = nowDatetime+':00';
@@ -298,16 +290,9 @@ exports.scheduledMessage = functions.region(region).pubsub
       }
 
       if (doc.collection.length) {
-        lineRet = await lineMsg.sendMulticastMessage({
-          to      : doc.collection,
-          messages: msg_format,
-          notificationDisabled: doc.notification_disabled,
-        });
+        lineRet = await line_client.multicast(doc.collection, msg_format, doc.notification_disabled);
       } else {
-        lineRet = await lineMsg.sendBroadcastMessage({
-          messages            : msg_format,
-          notificationDisabled: doc.notification_disabled,
-        });
+        lineRet = await line_client.broadcast(msg_format, doc.notification_disabled);
       }
 
       try {
@@ -339,7 +324,7 @@ exports.steppedMessage = functions.region(region).pubsub
 
   // --------------------------------------------------------------------------------------------
 
-  const now   = moment().add(9, 'h')
+  const now = moment().add(9, 'h')
 
   /** **************************************
    * ステップ配信メッセージを取得
@@ -350,11 +335,6 @@ exports.steppedMessage = functions.region(region).pubsub
   functions.logger.log(`${messages.length} case applicable`);
 
   if (messages.length) {
-
-    const lineMsg = new lineApi({
-      url: 'https://api.zp-ls.com/line/',
-      accessToken: process.env.LINE_PUBLIC_TOKEN,
-    });
 
     /** ------------------------+
      * 取得したメッセージを検証 */
@@ -382,16 +362,17 @@ exports.steppedMessage = functions.region(region).pubsub
         fs02.forEach(d => {
           let data = d.data();
           /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
-           * ブロック歴なし・友達登録済み・友だちの場合
+           * 友達登録済み・友だちの場合
            *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
           if(
             data['field-line_user_id'] &&                 // LINEユーザーIDあり
-            !data['field-line_block_datetime'] &&         // ブロック歴なし
+            // !data['field-line_block_datetime'] &&         // ブロック歴なし
             data['field-line_follow_status'] == 'follow'  // フォロー中
           ) {
             customers.push(data);
           }
         });
+        functions.logger.log(375, customers);
 
         for (let customer of customers) {
           let customer_name = customer['field-name'] || customer['field-line_user_name'];
@@ -411,11 +392,7 @@ exports.steppedMessage = functions.region(region).pubsub
             }
           })
 
-          let lineRet = await lineMsg.sendPushMessage({
-            to      : customer['field-line_user_id'],
-            messages: msg_format,
-            notificationDisabled: doc.notification_disabled,
-          });
+          let lineRet = await line_client.pushMessage(customer['field-line_user_id'], msg_format, doc.notification_disabled);
           functions.logger.log(418, JSON.stringify(lineRet));
         }
       }
@@ -446,7 +423,7 @@ exports.scheduledReserve = functions.region(region).pubsub
     const tmEnYmd       = moment(tomorrowEnd).format('YYYY年MM月DD日 HH:mm')
 
 
-    const fs            = await admin.firestore()
+    const fs = await admin.firestore()
       .collection('schedule')
       .where('start', '>', tomorrowStart)
       .where('start', '<', tomorrowEnd)
@@ -465,23 +442,12 @@ exports.scheduledReserve = functions.region(region).pubsub
       //   return doc.data();
       // });
 
-      const lineMsg = new lineApi({
-        url          : 'https://api.zp-ls.com/line/',
-        accessToken  : process.env.LINE_PUBLIC_TOKEN,
-      });
-
-      let lineRet, startDate;
       await Promise.all(reserve_data.map(async data => {
-        startDate = moment(data.start).add(9, 'h').format('YYYY年MM月DD日 HH:mm')
+        let startDate = moment(data.start).add(9, 'h').format('YYYY年MM月DD日 HH:mm')
 
-        lineRet = await lineMsg.sendPushMessage({
-          to      : data.userId,
-          messages: [
-            {
-              type: 'text',
-              text: `明日${startDate}にご予約をいただいております。\nお気をつけてお越しください。`
-            }
-          ],
+        let lineRet = await line_client.pushMessage(data.userId, {
+          type: 'text',
+          text: `明日${startDate}にご予約をいただいております。\nお気をつけてお越しください。`
         });
         // functions.logger.log(lineRet);
       }));
