@@ -105,9 +105,9 @@ export default {
       // ----------------------
       // 問い合わせルーム情報
       roomInfo: {
-        title     : '',
+        title     : this.$route.query.title || '',
         status    : '',
-        messages  : '',
+        messages  : this.$route.query.message || '',
         created_at: '',
         created_by: '',
         updated_at: '',
