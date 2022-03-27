@@ -305,24 +305,23 @@ export default {
         // ===========================================
         // ユーザー情報更新
         // ===========================================
-        if(this.userDoc){
-          await setDoc( doc( collection(db, 'customer'), this.userDoc.docId ), this.input, { merge: true } )
-        } else {
-          await setDoc( doc( collection(db, 'customer'), this.userId), this.input, { merge: true } )
-        }
-
-        // ===========================================
-        // LINE リッチメニュー変更・メッセージ送信
-        // - 初回のみ
-        // ===========================================
-        if(!this.userDoc) {
+        if(!this.input['field-registered']) {
+          this.$set(this.input, 'field-registered', true)
+          // ===========================================
+          // LINE リッチメニュー変更・メッセージ送信
+          // - 初回のみ
+          // ===========================================
           const config = await this.getLineSetting()
+          // LINE リッチメニュー変更
           if(config.customer_added_richmenu) await this.lineApi.linkRichmenuToUser(config.customer_added_richmenu, this.userId)
+          // メッセージ送信
           this.lineApi.sendPushMessage({
             to      : this.userId,
             messages: config.customer_added_message,
           })
+
         }
+        await setDoc( doc( collection(db, 'customer'), this.userId), this.input, { merge: true } )
 
         this.step = 3
       } catch (e) {

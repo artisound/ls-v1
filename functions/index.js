@@ -5,9 +5,11 @@ const admin     = require('firebase-admin');
 const express   = require('express');
 const moment    = require('moment');
 const axios     = require('axios');
-const request     = require('request');
+const request   = require('request');
 const app       = express();
 const lineApi   = require('./line_api');
+const line      = require('@line/bot-sdk');
+const middleware = line.middleware;
 
 const region    = 'asia-northeast2'
 const timezone  = 'Asia/Tokyo'
@@ -16,12 +18,39 @@ admin.initializeApp();
 /** **********************************************************************************************************
  * LINE Callback
  ********************************************************************************************************** */
-async function handleEvent(event) {
-  const lineMsg = new lineApi({
-    url        : 'https://api.zp-ls.com/line/',
-    accessToken: process.env.LINE_PUBLIC_TOKEN,
-  });
+const config = {
+  channelSecret     : process.env.LINE_PUBLIC_SECRET,
+  channelAccessToken: process.env.LINE_PUBLIC_TOKEN,
+}
+const line_wh     = express();
+const line_client = new line.Client(config);
+line_wh.use(middleware(config))
+line_wh.post('/', async (req, res) => {
+  req.body.destination // user ID of the bot (optional)
 
+  req.body.events // webhook event objects
+  const events = req.body.events;
+  if (events.length) {
+    const event = events[0];
+    await handleEvent(event)
+  }
+  res.json([]);
+});
+line_wh.use((err, req, res, next) => {
+  if (err instanceof SignatureValidationFailed) {
+    res.status(401).send(err.signature)
+    return
+  } else if (err instanceof JSONParseError) {
+    res.status(400).send(err.raw)
+    return
+  }
+  next(err) // will throw default 500
+});
+
+/** **********************************************************************************************************
+ * LINE Callback
+ ********************************************************************************************************** */
+async function handleEvent(event) {
   // *********************************************************
   // メッセージイベント
   // *********************************************************
@@ -48,16 +77,11 @@ async function handleEvent(event) {
           let message;
           message = (arrMsg.length) ? arrMsg.join('\n') : 'ご予約はありません。'
 
-          let ret = await lineMsg.sendReplyMessage({
-            token: event.replyToken,
-            messages: [
-              {
-                type: 'text',
-                text: message,
-              }
-            ],
-          });
-          // functions.logger.log(JSON.stringify(ret, null, "\t"));
+          let ret = await line_client.replyMessage(event.replyToken, {
+            type: 'text',
+            text: message,
+          })
+          functions.logger.log(JSON.stringify(ret, null, "\t"));
 
         } else {
           const fs = await admin.firestore()
@@ -82,81 +106,55 @@ async function handleEvent(event) {
             }
             functions.logger.log(JSON.stringify(msg_format));
 
-            let ret = await lineMsg.sendReplyMessage({
-              token   : event.replyToken,
-              messages: msg_format,
-            });
+            let ret = await line_client.replyMessage(event.replyToken, msg_format);
             functions.logger.log(JSON.stringify(ret, null, "\t"));
           } else {
-            let ret = await lineMsg.sendReplyMessage({
-              token   : event.replyToken,
-              messages: [
-                {
-                  type: 'text',
-                  text: 'メッセージありがとうございます！\n\n \
+            let ret = await line_client.replyMessage(event.replyToken, {
+              type: 'text',
+              text: 'メッセージありがとうございます！\n\n \
 申し訳ございませんが、送信されたメッセージについて答えできません。\n \
 メッセージ文を変えて送っていただくとお答えできるかもしれません。'
-                }
-              ],
             });
             functions.logger.log(JSON.stringify(ret, null, "\t"));
           }
         }
         return;
 
-      case 'image':
-        return await lineMsg.sendReplyMessage({
-          token   : event.replyToken,
-          messages: [{
-            type: 'text',
-            text: '画像を受け取りました。'
-          }],
-        });
+      // case 'image':
+      //   return await line_client.replyMessage(event.replyToken, {
+      //     type: 'text',
+      //     text: '画像を受け取りました。'
+      //   });
 
-      case 'video':
-        return await lineMsg.sendReplyMessage({
-          token   : event.replyToken,
-          messages: [{
-            type: 'text',
-            text: '動画を受け取りました。'
-          }],
-        });
+      // case 'video':
+      //   return await line_client.replyMessage(event.replyToken, {
+      //     type: 'text',
+      //     text: '動画を受け取りました。'
+      //   });
 
-      case 'audio':
-        return await lineMsg.sendReplyMessage({
-          token   : event.replyToken,
-          messages: [{
-            type: 'text',
-            text: '音声を受け取りました。'
-          }],
-        });
+      // case 'audio':
+      //   return await line_client.replyMessage(event.replyToken, {
+      //     type: 'text',
+      //     text: '音声を受け取りました。'
+      //   });
 
-      case 'file':
-        return await lineMsg.sendReplyMessage({
-          token   : event.replyToken,
-          messages: [{
-            type: 'text',
-            text: 'ファイルを受け取りました。'
-          }],
-        });
+      // case 'file':
+      //   return await line_client.replyMessage(event.replyToken, {
+      //     type: 'text',
+      //     text: 'ファイルを受け取りました。'
+      //   });
 
-      case 'location':
-        return await lineMsg.sendReplyMessage({
-          token   : event.replyToken,
-          messages: [{
-            type: 'text',
-            text: '位置情報を受け取りました。'
-          }],
-        });
+      // case 'location':
+      //   return await line_client.replyMessage(event.replyToken, {
+      //     type: 'text',
+      //     text: '位置情報を受け取りました。'
+      //   });
 
-      case 'sticker':
-        return await lineMsg.sendReplyMessage({
-          token   : event.replyToken,
-          messages: [{
-            type: 'text',
-            text: 'スタンプを受け取りました。'
-          }],
-        });
+      // case 'sticker':
+      //   return await line_client.replyMessage(event.replyToken, {
+      //     type: 'text',
+      //     text: 'スタンプを受け取りました。'
+      //   });
 
       default:
         return Promise.resolve(null);
@@ -177,36 +175,28 @@ async function handleEvent(event) {
       return doc.data();
     });
 
-    // --------------------------
-    // 初回友だち追加
-    // --------------------------
     let ret, changeRichmenu;
     if (!customer) {
-      // const init_rm = config.init_richmenu;
-      // changeRichmenu = await lineMsg.linkRichmenuToUser(init_rm, event.source.userId);
-
-      ret = await lineMsg.sendReplyMessage({
-        token   : event.replyToken,
-        messages: config.friend_added_message,
-      });
+      // --------------------------
+      // 初回友だち追加
+      // --------------------------
+      ret = await line_client.replyMessage(event.replyToken, config.friend_added_message);
+    } else {
+      // --------------------------
+      // 友だち再登録
+      // --------------------------
+      ret = await line_client.replyMessage(event.replyToken, config.turn_back_message);
     }
-    // --------------------------
-    // 友だち再登録
-    // --------------------------
-    else {
-      ret = await lineMsg.sendReplyMessage({
-        token   : event.replyToken,
-        messages: config.turn_back_message,
-      });
-    }
-    // functions.logger.log(186, changeRichmenu);
-    // functions.logger.log(187, ret);
 
     // Firestoreにユーザーデータ登録
+    const profile = await line_client.getProfile(event.source.userId);
     await admin.firestore().collection('customer').doc(event.source.userId).set({
       'field-line_user_id'        : event.source.userId,
+      'field-line_user_name'      : profile.displayName,
       'field-line_follow_status'  : event.type,
-      'field-line_follow_datetime': moment.unix(event.timestamp/1000).format('YYYY-MM-DD HH:mm:ss'),
+      'field-line_language'       : profile.language,
+      'field-line_picture'        : profile.pictureUrl,
+      'field-line_follow_datetime': event.timestamp,
     }, { merge: true }).then(() => {
       functions.logger.log(event);
     }).catch((err) => {
@@ -223,7 +213,7 @@ async function handleEvent(event) {
     await admin.firestore().collection('customer').doc(event.source.userId).update({
       'field-line_user_id'       : event.source.userId,
       'field-line_follow_status' : event.type,
-      'field-line_block_datetime': moment.unix(event.timestamp/1000).format('YYYY-MM-DD HH:mm:ss'),
+      'field-line_block_datetime': event.timestamp,
     }, { merge: true }).then(() => {
       functions.logger.log(event);
     }).catch((err) => {
@@ -234,16 +224,7 @@ async function handleEvent(event) {
 }
 
 
-exports.webhook = functions.region(region).https.onRequest(async (req, res) => {
-  functions.logger.log(237, req.body)
-
-  const events = req.body.events;
-  if (events.length) {
-    const event = events[0];
-    await handleEvent(event)
-  }
-  res.json([]);
-});
+exports.webhook = functions.region(region).https.onRequest(line_wh);
 
 /** **********************************************************************************************************
  * Firebase ユーザーIDトークン取得
