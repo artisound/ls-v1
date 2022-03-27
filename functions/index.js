@@ -382,8 +382,6 @@ exports.steppedMessage = functions.region(region).pubsub
       let timing_day    = timing[0] || 1; // default: 1日前
       let timing_oclock = timing[1] || 8; // default: 08:00
       let target_registered_at = moment(now).subtract(timing_day, 'd').format('YYYY-MM-DD');
-      functions.logger.log(moment(now).subtract(timing_day, 'd').format('YYYY-MM-DD HH:mm'));
-      functions.logger.log(384, target_registered_at);
 
       /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
        * 現在時とメッセージの送信指定時刻が同じ場合に実行
@@ -402,7 +400,6 @@ exports.steppedMessage = functions.region(region).pubsub
         const customers = [];
         fs02.forEach(d => {
           let data = d.data();
-          functions.logger.log(397, JSON.stringify(data));
           /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
            * ブロック歴なし・友達登録済み・友だちの場合
            *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
@@ -411,25 +408,30 @@ exports.steppedMessage = functions.region(region).pubsub
             !data['field-line_block_datetime'] &&         // ブロック歴なし
             data['field-line_follow_status'] == 'follow'  // フォロー中
           ) {
-            customers.push(data['field-line_user_id']);
+            customers.push(data);
           }
         });
-        functions.logger.log(406, `${customers.join(',')}`);
 
-        if (customers.length) {
+        for (let customer of customers) {
+          let customer_name = customer['field-name'] || customer['field-line_user_name'];
+
           // メッセージフォーマットを再生成
           const msg_format = [];
-          for (let msg of doc.msg_format) {
+          doc.msg_format.forEach(msg => {
             if (msg.type == 'json') {
-              msg.format = strToJson(msg.str_format)
+              let replaced_str_format = msg.str_format.replace(/\{\{name\}\}/g, customer_name);
+              msg.format = strToJson(replaced_str_format)
               msg_format.push(msg.format)
+            } else if (msg.type == 'text') {
+              msg.text = msg.text.replace(/\{\{name\}\}/g, customer_name);
+              msg_format.push(msg)
             } else {
               msg_format.push(msg)
             }
-          }
+          })
 
-          let lineRet = await lineMsg.sendMulticastMessage({
-            to      : customers,
+          let lineRet = await lineMsg.sendPushMessage({
+            to      : customer['field-line_user_id'],
             messages: msg_format,
             notificationDisabled: doc.notification_disabled,
           });

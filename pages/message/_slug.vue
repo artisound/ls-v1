@@ -149,7 +149,7 @@
                   icon
                   x-small
                   :disabled="(formats.length > 1) ? false : true"
-                  @click="deleteFormat"
+                  @click="deleteFormat(key)"
                 ><v-icon>mdi-close</v-icon></v-btn>
               </v-col>
 
@@ -187,9 +187,22 @@
               <v-textarea
                 dense
                 outlined
+                :ref="`type_text_${key}`"
                 hide-details="auto"
                 v-model="fmt.text"
               ></v-textarea>
+
+              <div class="d-flex">
+                <v-col
+                  cols="12"
+                  class="d-flex px-0"
+                >
+                  <v-spacer></v-spacer>
+                  <v-btn
+                    @click="execInsertText('name', key)"
+                  >名前を挿入</v-btn>
+                </v-col>
+              </div>
             </v-card-text>
 
             <!-- image -->
@@ -1264,6 +1277,7 @@ export default {
      * @param {number|string} key - メッセージフォーマットの配列キー
      ***************************************************** */
     deleteFormat(key) {
+      console.log(key)
       this.formats.splice(key, 1)
     },
 
@@ -1534,6 +1548,15 @@ export default {
       }
 
       this.loading = false
+    },
+
+    /** ****************************************
+     * テキストの途中に文字挿入
+     **************************************** */
+    execInsertText(variable, n) {
+      const textarea = this.$refs[`type_text_${n}`][0].$refs.input
+      textarea.focus()
+      document.execCommand('insertText', false, `{{${variable}}}`)
     },
 
     /** ****************************************
