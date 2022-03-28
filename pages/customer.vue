@@ -35,6 +35,19 @@
           </v-toolbar>
         </template>
 
+        <template v-slot:item.field-line_picture="{ item }">
+          <v-avatar
+            v-if="item['field-line_picture']"
+            size="36"
+          >
+            <img :src="item['field-line_picture']" :alt="item['field-name'] || item['field-line_user_name']">
+          </v-avatar>
+        </template>
+
+        <template v-slot:item.field-name="{ item }">
+          {{ item['field-name'] || item['field-line_user_name'] }}
+        </template>
+
         <template v-slot:item.field-status="{ item }">
           <v-chip v-if="item['field-line_follow_status']=='follow'" color="green" dark>フォロー中</v-chip>
           <v-chip v-else-if="item['field-line_follow_status']=='unfollow'" color="red" dark>ブロック中</v-chip>
@@ -106,11 +119,11 @@ export default {
       page: 'customer',
       // 表
       headers: [
-        // { text: '',           value: 'detail',  align: 'center', sortable: false, width: '100px' },
-        { text: 'お客様名',   value: 'field-name',    align: 'center', sortable: false },
-        { text: '性別',       value: 'field-gender',  align: 'center' },
-        { text: 'お住まい',   value: 'field-address', align: 'center' },
-        { text: 'ステータス', value: 'field-status',  align: 'center' },
+        { text: '',           value: 'field-line_picture',  align: 'center', sortable: false, width: '100px' },
+        { text: 'お客様名',   value: 'field-name',          align: 'center', sortable: false },
+        { text: '性別',       value: 'field-gender',        align: 'center' },
+        { text: 'お住まい',   value: 'field-address',       align: 'center' },
+        { text: 'ステータス', value: 'field-status',        align: 'center' },
         // { text: '',           value: 'actions', align: 'center', sortable: false, width: '100px' },
       ],
       search: '',

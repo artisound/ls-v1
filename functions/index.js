@@ -382,10 +382,14 @@ exports.steppedMessage = functions.region(region).pubsub
           doc.msg_format.forEach(msg => {
             if (msg.type == 'json') {
               let replaced_str_format = msg.str_format.replace(/\{\{name\}\}/g, customer_name);
+              // replaced_str_format = msg.str_format.replace(/\{\{date\}\}/g, customer_name);
+              // replaced_str_format = msg.str_format.replace(/\{\{time\}\}/g, customer_name);
               msg.format = strToJson(replaced_str_format)
               msg_format.push(msg.format)
             } else if (msg.type == 'text') {
               msg.text = msg.text.replace(/\{\{name\}\}/g, customer_name);
+              // msg.text = msg.text.replace(/\{\{date\}\}/g, customer_name);
+              // msg.text = msg.text.replace(/\{\{time\}\}/g, customer_name);
               msg_format.push(msg)
             } else {
               msg_format.push(msg)
