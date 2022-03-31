@@ -293,21 +293,21 @@ exports.scheduledMessage = functions.region(region).pubsub
             /** **************************************
              * ユーザー情報取得
              ************************************** */
-            admin.firestore()
+            await admin.firestore()
               .collection('customer')
               .doc(customer)
               .get()
               .then( resp => {
-                if(resp.exists) {
-                  customers.push(resp.data());
-                } else {
-                  functions.logger.log(299, 'No such doc');
-                }
+                functions.logger.log(301, resp);
+                functions.logger.log(302, resp.data());
+                customers.push(resp.data());
               }).catch( err => functions.logger.log(301, err) );
           }
 
+          functions.logger.log(309, customers);
           for (let customer of customers) {
             let customer_name = customer['field-name'] || customer['field-line_user_name'];
+            functions.logger.log(312, customer_name);
 
             /** **************************************
              * メッセージフォーマットを再生成
@@ -320,9 +320,9 @@ exports.scheduledMessage = functions.region(region).pubsub
                 msg_format.push(msg.format)
               } else if (msg.type == 'text') {
                 msg.text = msg.text.replace(/\{\{name\}\}/g, customer_name);
-                msg_format.push(msg)
+                msg_format.push(msg);
               } else {
-                msg_format.push(msg)
+                msg_format.push(msg);
               }
             })
 
@@ -330,6 +330,7 @@ exports.scheduledMessage = functions.region(region).pubsub
              * メッセージ送信
              ************************************** */
             lineRet = await line_client.pushMessage(customer['field-line_user_id'], msg_format, doc.notification_disabled);
+            functions.logger.log(333, lineRet);
           }
         }
         /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
@@ -338,10 +339,20 @@ exports.scheduledMessage = functions.region(region).pubsub
          * - 対象のユーザーIDに一斉メッセージ送信
          *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
         else {
+          const msg_format = [];
+          for (let msg of doc.msg_format) {
+            if (msg.type == 'json') {
+              msg.format = this.strToJson(msg.str_format)
+              msg_format.push(msg.format)
+            } else {
+              msg_format.push(msg)
+            }
+          }
           /** **************************************
            * メッセージ送信
            ************************************** */
           lineRet = await line_client.multicast(doc.collection, msg_format, doc.notification_disabled);
+          functions.logger.log(346, lineRet);
         }
       }
       /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
@@ -350,16 +361,28 @@ exports.scheduledMessage = functions.region(region).pubsub
        * - 全ユーザーに一斉送信
        *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
       else {
+        const msg_format = [];
+        for (let msg of doc.msg_format) {
+          if (msg.type == 'json') {
+            msg.format = this.strToJson(msg.str_format)
+            msg_format.push(msg.format)
+          } else {
+            msg_format.push(msg)
+          }
+        }
         /** **************************************
          * メッセージ送信
          ************************************** */
         lineRet = await line_client.broadcast(msg_format, doc.notification_disabled);
+        functions.logger.log(359, lineRet);
       }
+
+      functions.logger.log(362, lineRet);
 
       /** **************************************
        * 送信日時を更新
        ************************************** */
-      await admin.firestore().doc(`message/${dataId}`).set({sended_at: nowDatetime+':00'}, { merge: true });
+      if (lineRet) await admin.firestore().doc(`message/${dataId}`).set({sended_at: nowDatetime+':00'}, { merge: true });
     }));
   }
 
