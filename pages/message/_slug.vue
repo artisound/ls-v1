@@ -726,7 +726,7 @@
                       multiple
                       clearable
                       hide-details="auto"
-                      v-model="doc.collection"
+                      v-model="collections"
                       :items="customers"
                     ><!-- vmは一時的 --></v-autocomplete>
                 </v-list-item-content>
@@ -1419,38 +1419,39 @@ export default {
 
 
       const staffs = await this.getDataList('staff')
-      let sendToUser;
       for (let staff of staffs) {
         if(staff['field-uid'] && staff['field-uid'] == this.$store.getters.user.uid) {
-          sendToUser = staff['field-line_user_id']
+
+          const msg_format = [];
+          for (let msg of this.formats) {
+            if(msg.type == 'json') {
+              msg.format = this.strToJson(msg.str_format)
+              msg_format.push(msg.format)
+            } else {
+              msg_format.push(msg)
+            }
+          }
+
+          let sendMsg = await msgApi.sendPushMessage({
+            to      : staff['field-line_user_id'],
+            messages: msg_format,
+          });
+          console.log(sendMsg)
+
+          if(!Object.keys(sendMsg).length) {
+            this.$toast.success(`正常に送信されました。`, {
+              position: 'bottom-right'
+            })
+          } else {
+            this.$toast.error(`メッセージの送信に失敗しました。\nメッセージの構成を見直してください。`, {
+              position: 'bottom-right'
+            })
+          }
+
+          this.loading = false;
           break;
         }
       }
-
-      const msg_format = [];
-      for (let msg of this.formats) {
-        if(msg.type == 'json') {
-          msg.format = this.strToJson(msg.str_format)
-          msg_format.push(msg.format)
-        } else {
-          msg_format.push(msg)
-        }
-      }
-      let sendMsg = await msgApi.sendPushMessage({
-        to      : sendToUser,
-        messages: msg_format,
-      });
-      console.log(sendMsg)
-      if(!Object.keys(sendMsg).length) {
-        this.$toast.success(`正常に送信されました。`, {
-          position: 'bottom-right'
-        })
-      } else {
-        this.$toast.error(`メッセージの送信に失敗しました。\nメッセージの構成を見直してください。`, {
-          position: 'bottom-right'
-        })
-      }
-      this.loading = false;
     },
 
     /** *****************************************************
@@ -1477,6 +1478,7 @@ export default {
             saveData[key] = msg_format
             break;
           case 'collection':
+            console.log(this.collections)
             saveData[key] = this.collectionCheck ? this.collections : []
             break;
           case 'active':

@@ -263,47 +263,103 @@ exports.scheduledMessage = functions.region(region).pubsub
   fs.forEach(d => {
     data = d.data();
     data.id = d.id;
-    functions.logger.log(d.id);
     messages.push(data);
   });
   functions.logger.log(`${messages.length} case applicable`);
 
+  /** ------------------------+
+   * 取得したメッセージを検証 */
   if(messages.length){
-    // const config = await admin.firestore().doc('setting/line').get().then(doc => {
-    //   return doc.data();
-    // });
-
     let dataId, lineRet;
     await Promise.all(messages.map(async doc => {
-      doc.sended_at = nowDatetime+':00';
-      dataId        = doc.id;
+      dataId = doc.id;
       delete doc.id;
 
-      const msg_format = [];
-      for (let msg of doc.msg_format) {
-        if (msg.type == 'json') {
-          msg.format = strToJson(msg.str_format)
-          msg_format.push(msg.format)
-        } else {
-          msg_format.push(msg)
+
+      /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+       * 判定１
+       * メッセージの条件に合うユーザーを取得
+       * - 対象のユーザーIDにメッセージ送信
+       *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
+      const customers = [];
+      if (doc.collection.length) {
+        /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+         * 判定２
+         * メッセージに"text"または"json"がある
+         * - 対象のユーザーIDごとにメッセージ送信
+         *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
+        if (doc.msg_format.filter(v => ['text', 'json'].includes(v.type))) {
+          for (let customer of doc.collection) {
+            /** **************************************
+             * ユーザー情報取得
+             ************************************** */
+            admin.firestore()
+              .collection('customer')
+              .doc(customer)
+              .get()
+              .then( resp => {
+                if(resp.exists) {
+                  customers.push(resp.data());
+                } else {
+                  functions.logger.log(299, 'No such doc');
+                }
+              }).catch( err => functions.logger.log(301, err) );
+          }
+
+          for (let customer of customers) {
+            let customer_name = customer['field-name'] || customer['field-line_user_name'];
+
+            /** **************************************
+             * メッセージフォーマットを再生成
+             ************************************** */
+            const msg_format = [];
+            doc.msg_format.forEach(msg => {
+              if (msg.type == 'json') {
+                let replaced_str_format = msg.str_format.replace(/\{\{name\}\}/g, customer_name);
+                msg.format = strToJson(replaced_str_format)
+                msg_format.push(msg.format)
+              } else if (msg.type == 'text') {
+                msg.text = msg.text.replace(/\{\{name\}\}/g, customer_name);
+                msg_format.push(msg)
+              } else {
+                msg_format.push(msg)
+              }
+            })
+
+            /** **************************************
+             * メッセージ送信
+             ************************************** */
+            lineRet = await line_client.pushMessage(customer['field-line_user_id'], msg_format, doc.notification_disabled);
+          }
+        }
+        /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+         * 判定２
+         * メッセージに"text"または"json"がある
+         * - 対象のユーザーIDに一斉メッセージ送信
+         *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
+        else {
+          /** **************************************
+           * メッセージ送信
+           ************************************** */
+          lineRet = await line_client.multicast(doc.collection, msg_format, doc.notification_disabled);
         }
       }
-
-      if (doc.collection.length) {
-        lineRet = await line_client.multicast(doc.collection, msg_format, doc.notification_disabled);
-      } else {
+      /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+       * 判定１
+       * メッセージの条件に合うユーザーを取得
+       * - 全ユーザーに一斉送信
+       *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
+      else {
+        /** **************************************
+         * メッセージ送信
+         ************************************** */
         lineRet = await line_client.broadcast(msg_format, doc.notification_disabled);
       }
 
-      try {
-        const lineKeys = Object.keys(lineRet);
-        if(!lineKeys.length) {
-          return await admin.firestore().doc(`message/${dataId}`).set(doc);
-        }
-      } catch (e) {
-        functions.logger.log(e);
-        return;
-      }
+      /** **************************************
+       * 送信日時を更新
+       ************************************** */
+      await admin.firestore().doc(`message/${dataId}`).set({sended_at: nowDatetime+':00'}, { merge: true });
     }));
   }
 
@@ -345,6 +401,7 @@ exports.steppedMessage = functions.region(region).pubsub
       let target_registered_at = moment(now).subtract(timing_day, 'd').format('YYYY-MM-DD');
 
       /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+       * 判定１
        * 現在時とメッセージの送信指定時刻が同じ場合に実行
        *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
       if (now.format('H') == timing_oclock) {
@@ -362,6 +419,7 @@ exports.steppedMessage = functions.region(region).pubsub
         fs02.forEach(d => {
           let data = d.data();
           /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+           * 判定２
            * 友達登録済み・友だちの場合
            *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
           if(
@@ -377,19 +435,17 @@ exports.steppedMessage = functions.region(region).pubsub
         for (let customer of customers) {
           let customer_name = customer['field-name'] || customer['field-line_user_name'];
 
-          // メッセージフォーマットを再生成
+          /** **************************************
+           * メッセージフォーマットを再生成
+           ************************************** */
           const msg_format = [];
           doc.msg_format.forEach(msg => {
             if (msg.type == 'json') {
               let replaced_str_format = msg.str_format.replace(/\{\{name\}\}/g, customer_name);
-              // replaced_str_format = msg.str_format.replace(/\{\{date\}\}/g, customer_name);
-              // replaced_str_format = msg.str_format.replace(/\{\{time\}\}/g, customer_name);
               msg.format = strToJson(replaced_str_format)
               msg_format.push(msg.format)
             } else if (msg.type == 'text') {
               msg.text = msg.text.replace(/\{\{name\}\}/g, customer_name);
-              // msg.text = msg.text.replace(/\{\{date\}\}/g, customer_name);
-              // msg.text = msg.text.replace(/\{\{time\}\}/g, customer_name);
               msg_format.push(msg)
             } else {
               msg_format.push(msg)
@@ -412,9 +468,9 @@ exports.steppedMessage = functions.region(region).pubsub
  * 予約1日前配信
  ********************************************************************************************************** */
 exports.scheduledReserve = functions.region(region).pubsub
-.schedule('00 12 * * *')
-.timeZone(timezone)
-.onRun(async context => {
+  .schedule('0 12 * * *')
+  .timeZone(timezone)
+  .onRun(async () => {
     // .schedule('*/2 * * * *')
     // --------------------------------------------------------------------------------------------
 
