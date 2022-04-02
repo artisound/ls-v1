@@ -870,6 +870,7 @@ import { doc, collection, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc,
 import { lineMsgApi } from '~/plugins/line_api.js';
 import { db } from '~/plugins/firebase.js';
 import moment from 'moment'
+const date = new Date();
 
 export default {
   props: ['page'],
@@ -899,7 +900,7 @@ export default {
           time: false,
         },
         today: moment().format('YYYY-MM-DD'),
-        now: moment().format('HH:mm:ss')
+        now  : moment().format('HH:mm:ss')
       },
 
       stickerTab: null,
@@ -989,7 +990,7 @@ export default {
      ******************************************* */
     reserve: {
       handler: function (aft) {
-        this.$set(this.doc, 'reserve_at', `${aft.date} ${aft.time}`)
+        this.$set( this.doc, 'reserve_at', moment(`${aft.date} ${aft.time}`).valueOf() );
       },
       deep: true,
     },
@@ -1521,7 +1522,7 @@ export default {
           console.log(sendMsg)
         }
 
-        saveData.sended_at = moment().format('YYYY-MM-DD HH:mm:ss')
+        saveData.sended_at = date.getTime()
       }
 
       // 予約日時が空もしくは空白があれば、予約無効
@@ -1531,10 +1532,10 @@ export default {
         console.log(saveData)
 
         if(this.docId == 'new') {
-          saveData.created_at = moment().format('YYYY-MM-DD HH:mm:ss');
+          saveData.created_at = date.getTime()
           await addDoc(collection(db, this.page), saveData)
         } else {
-          saveData.updated_at = moment().format('YYYY-MM-DD HH:mm:ss');
+          saveData.updated_at = date.getTime()
           await setDoc(doc(collection(db, this.page), this.docId), saveData, { merge: true })
         }
 

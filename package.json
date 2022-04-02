@@ -7,7 +7,10 @@
     "build": "nuxt build",
     "start": "nuxt start",
     "generate": "nuxt generate",
-    "clear-cache": "rm -rf node_modules/.cache/hard-source/"
+    "clear-cache": "rm -rf node_modules/.cache/hard-source/",
+    "deploy": "yarn generate && firebase deploy",
+    "deploy-hosting": "yarn generate && firebase deploy --only hosting",
+    "deploy-functions": "firebase deploy --only functions"
   },
   "dependencies": {
     "@line/bot-sdk": "^7.4.0",

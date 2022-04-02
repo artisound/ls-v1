@@ -30,6 +30,7 @@ export default {
     }
   },
   mounted: async function(){
+    console.log(process.env.NODE_ENV)
   },
   watch: {
   },

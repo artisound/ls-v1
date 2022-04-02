@@ -413,15 +413,15 @@ export default {
   },
   watch: {
     sDate(aft) {
-      const sDateUnix = moment(aft).unix() * 1000
-      const eDateUnix = moment(this.eDate).unix() * 1000
+      const sDateUnix = moment(aft).valueOf()
+      const eDateUnix = moment(this.eDate).valueOf()
       if(sDateUnix > eDateUnix) {
         this.eDate = moment(sDateUnix).format('YYYY-MM-DD')
       }
     },
     eDate(aft) {
-      const sDateUnix = moment(this.sDate).unix() * 1000
-      const eDateUnix = moment(aft).unix() * 1000
+      const sDateUnix = moment(this.sDate).valueOf()
+      const eDateUnix = moment(aft).valueOf()
       if(sDateUnix > eDateUnix) {
         this.eDate = moment(eDateUnix).format('YYYY-MM-DD')
       }
@@ -519,7 +519,7 @@ export default {
       } else if (newEvent && this.createStart) {
         const mouseRounded = this.roundTime(mouse, false)
 
-        const start = (Number(this.createStart)) ? this.createStart : moment(this.createStart).unix() * 1000
+        const start = (Number(this.createStart)) ? this.createStart : moment(this.createStart).valueOf()
         const min   = Math.min(mouseRounded, start)
         const max   = Math.max(mouseRounded, start)
 
@@ -556,10 +556,10 @@ export default {
       console.log(event)
 
       // 日付が数値(= タイムスタンプ)の場合、変換
-      this.sDate = (Number(this.selectedEvent.start)) ? moment.unix(this.selectedEvent.start / 1000).format('YYYY-MM-DD') : moment.unix(this.selectedEvent.start).format('YYYY-MM-DD')
-      this.sTime = (Number(this.selectedEvent.start)) ? moment.unix(this.selectedEvent.end / 1000).format('HH:mm') : moment.unix(this.selectedEvent.end).format('HH:mm')
-      this.eDate = (Number(this.selectedEvent.end)) ? moment.unix(this.selectedEvent.start / 1000).format('YYYY-MM-DD') : moment.unix(this.selectedEvent.start).format('YYYY-MM-DD')
-      this.eTime = (Number(this.selectedEvent.end)) ? moment.unix(this.selectedEvent.end / 1000).format('HH:mm') : moment.unix(this.selectedEvent.end).format('HH:mm')
+      this.sDate = (Number(this.selectedEvent.start)) ? moment(this.selectedEvent.start).format('YYYY-MM-DD') : moment(this.selectedEvent.start).format('YYYY-MM-DD')
+      this.sTime = (Number(this.selectedEvent.start)) ? moment(this.selectedEvent.end).format('HH:mm')        : moment(this.selectedEvent.end).format('HH:mm')
+      this.eDate = (Number(this.selectedEvent.end))   ? moment(this.selectedEvent.start).format('YYYY-MM-DD') : moment(this.selectedEvent.start).format('YYYY-MM-DD')
+      this.eTime = (Number(this.selectedEvent.end))   ? moment(this.selectedEvent.end).format('HH:mm')        : moment(this.selectedEvent.end).format('HH:mm')
 
       requestAnimationFrame( () => requestAnimationFrame( () => {
         this.createdOpen  = true;
@@ -717,8 +717,8 @@ export default {
      **************************************************** */
     async setEvents(ymd = null) {
       const lastDay = this.monthLastDay(ymd.end.year, ymd.end.month)
-      const sMonth  = moment(`${ymd.start.year}-${this.toDoubleDigits(ymd.start.month)}-01 00:00:00`).unix() * 1000
-      const eMonth  = moment(`${ymd.end.year}-${this.toDoubleDigits(ymd.end.month)}-${lastDay} 23:59:59`).unix() * 1000
+      const sMonth  = moment(`${ymd.start.year}-${this.toDoubleDigits(ymd.start.month)}-01 00:00:00`).valueOf()
+      const eMonth  = moment(`${ymd.end.year}-${this.toDoubleDigits(ymd.end.month)}-${lastDay} 23:59:59`).valueOf()
 
       if(this.current_month !== sMonth || this.current_month !== eMonth) {
         console.log(sMonth)
@@ -819,8 +819,8 @@ export default {
       const evIndex = this.events.findIndex(v => v.id === evId)
       console.log( moment(this.selectedEvent.start).format('YYYY/MM/DD') )
 
-      this.$set(this.selectedEvent, 'start', moment(`${this.sDate} ${this.sTime}`).unix() * 1000)
-      this.$set(this.selectedEvent, 'end', moment(`${this.eDate} ${this.eTime}`).unix() * 1000)
+      this.$set( this.selectedEvent, 'start', moment(`${this.sDate} ${this.sTime}`).valueOf() )
+      this.$set( this.selectedEvent, 'end',   moment(`${this.eDate} ${this.eTime}`).valueOf() )
       // this.selectedEvent.start  = moment(`${this.sDate} ${this.sTime}`).unix() * 1000
       // this.selectedEvent.end    = moment(`${this.eDate} ${this.eTime}`).unix() * 1000
     },
@@ -838,8 +838,8 @@ export default {
       const evId    = this.selectedEvent.id
       const evIndex = this.events.findIndex(v => v.id === evId)
 
-      this.events[evIndex].start = moment(`${this.sDate} ${this.sTime}`).unix() * 1000
-      this.events[evIndex].end   = moment(`${this.eDate} ${this.eTime}`).unix() * 1000
+      this.events[evIndex].start = moment(`${this.sDate} ${this.sTime}`).valueOf()
+      this.events[evIndex].end   = moment(`${this.eDate} ${this.eTime}`).valueOf()
     },
 
 

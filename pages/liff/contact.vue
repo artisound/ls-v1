@@ -9,7 +9,7 @@
       <v-sheet class="py-3">
         <v-row>
           <v-col cols="6">
-            <v-btn style="width:100%;">キャンセル</v-btn>
+            <v-btn style="width:100%;">閉じる</v-btn>
           </v-col>
 
           <v-col cols="6">
@@ -81,9 +81,16 @@ import { signInWithEmailAndPassword, signOut, deleteUser } from "firebase/auth";
 import { auth, db } from '~/plugins/firebase.js';
 import { lineMsgApi } from '~/plugins/line_api.js';
 import moment from 'moment';
+const date = new Date();
 
+const LIFF_CONTACT = (process.env.NODE_ENV === 'development') ? process.env.LIFF_CONTACT_DEV : process.env.LIFF_CONTACT
+console.log(LIFF_CONTACT)
 export default {
   layout: 'liff',
+  model: {
+    prop: 'overlay',
+    event: 'input-name',
+  },
   data() {
     return {
       // ----------------------
@@ -133,7 +140,7 @@ export default {
     // ==================================
     // ① LIFF ユーザー情報取得
     // ==================================
-    this.liffInfo = await getLiffInfo(process.env.LIFF_CONTACT)
+    this.liffInfo = await getLiffInfo(LIFF_CONTACT)
 
     // ==================================
     // ② Firebase ログイン
@@ -293,11 +300,8 @@ export default {
      ******************************************* */
     async sendContact(){
       this.loading           = true   // ローディング開始
+      this.overlay           = true   // ローディング開始
       this.dialogSendMessage = false  // メッセージ送信ダイアログを閉じる
-      // 匿名ログイン
-      // this.login = await signInAnonymously(auth)
-
-      const now = moment().format('YYYY-MM-DD HH:mm:ss')
 
       try {
         // ============================
@@ -305,7 +309,7 @@ export default {
         // ============================
         if(this.mid){
           // LINE連携しているスタッフのLINEユーザーID取得
-          const staffLineIds = await getStaffDocs()
+          const staffLineIds = await this.getStaffDocs()
 
           // ====================================================================
           // LINEメッセージ送信
@@ -331,7 +335,7 @@ export default {
               messages: this.lineMessageFormat({
                 admin : true,
                 title : `${customerName}様から追加の問い合わせがありました。`,
-                body  : `受付日時：${moment(now).format('YYYY年M月D日 H:mm')}\n\n件名：${this.input['field-title']}\n本文：\n${this.input['field-body']}`,
+                body  : `受付日時：${moment().format('YYYY年M月D日 H:mm')}\n\n件名：${this.input['field-title']}\n本文：\n${this.input['field-body']}`,
                 roomId: this.mid,
                 liffId: process.env.LIFF_CONTACT,
               }),
@@ -362,7 +366,7 @@ export default {
               to: this.liffInfo.userId,
               messages: this.lineMessageFormat({
                 title : `${customerName}からお問い合わせの返信がありました。`,
-                body  : `受付日時：${moment(now).format('YYYY年M月D日 H:mm')}\n\n件名：${this.input['field-title']}\n本文：\n${this.input['field-body']}`,
+                body  : `受付日時：${moment().format('YYYY年M月D日 H:mm')}\n\n件名：${this.input['field-title']}\n本文：\n${this.input['field-body']}`,
                 roomId: this.mid,
                 liffId: process.env.LIFF_CONTACT,
               }),
@@ -374,7 +378,7 @@ export default {
           // 問い合わせルーム更新
           // ====================================================================
           this.$set(this.roomInfo, 'messages'  , this.roomInfo.messages + 1)
-          this.$set(this.roomInfo, 'updated_at', now)
+          this.$set(this.roomInfo, 'updated_at', date.getTime())
           this.$set(this.roomInfo, 'updated_by', this.liffInfo.userId)
 
           await updateDoc( doc( db, 'contact', this.mid ), this.roomInfo )
@@ -382,7 +386,7 @@ export default {
           // ---------------------------
           // 問い合わせ内容登録
           // ---------------------------
-          this.input['field-sended_at'] = moment(now).unix()
+          this.input['field-sended_at'] = date.getTime()
           await addDoc( collection(db, 'contact', this.mid, 'message'), this.input )
 
         }
@@ -398,14 +402,14 @@ export default {
           this.$set( this.roomInfo, 'status',     0 )
           this.$set( this.roomInfo, 'messages',   1 )
           this.$set( this.roomInfo, 'customer',   this.userDoc.data['field-name'] || this.userDoc.data['field-line_user_name'] )
-          this.$set( this.roomInfo, 'created_at', now )
+          this.$set( this.roomInfo, 'created_at', date.getTime() )
           this.$set( this.roomInfo, 'created_by', this.liffInfo.userId )
           const docRef = await addDoc( collection( db, 'contact' ), this.roomInfo )
 
           // ---------------------------
           // 問い合わせ内容登録
           // ---------------------------
-          this.input['field-sended_at'] = moment(now).unix()
+          this.input['field-sended_at'] = date.getTime()
           await addDoc( collection(db, 'contact', docRef.id, 'message'), this.input )
 
           // ---------------------------
@@ -428,9 +432,9 @@ export default {
             messages: this.lineMessageFormat({
               admin : true,
               title : `${customerName}様から問い合わせがありました。`,
-              body  : `受付日時：${moment(now).format('YYYY年M月D日 H時mm分')}\n問い合わせ内容：\n${this.input['field-body']}`,
+              body  : `受付日時：${moment().format('YYYY年M月D日 H時mm分')}\n問い合わせ内容：\n${this.input['field-body']}`,
               roomId: docRef.id,
-              liffId: process.env.LIFF_CONTACT,
+              liffId: LIFF_CONTACT,
             }),
           });
           console.log(sendMsgAdmin)
@@ -444,6 +448,7 @@ export default {
       }
 
       this.loading = false
+      this.overlay = false
     },
 
 

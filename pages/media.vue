@@ -52,8 +52,7 @@
         </template>
 
         <template v-slot:item.created_at="{ item }">
-          {{item.created_at}}
-          <!-- <span :html="moment(item.created_at).format('YYYY/MM/DD HH:mm')"></span> -->
+          {{ datetimeFormat(item.created_at, 'YYYY/MM/DD HH:mm') }}
         </template>
 
         <template v-slot:item.actions="{ item }">
@@ -174,7 +173,8 @@
 import { getStorage, ref, getDownloadURL, uploadString, deleteObject } from "firebase/storage";
 import { doc, collection, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
 import { db } from '~/plugins/firebase.js';
-import moment from 'moment'
+import moment from 'moment';
+const date = new Date();
 
 export default {
   layout: 'main',
@@ -226,6 +226,11 @@ export default {
     this.loadingTbl = false
   },
   methods: {
+    datetimeFormat(dt, format) {
+      return moment(dt).format(format);
+    },
+
+
     /** *****************************************************
      * ファイル選択時、ファイル情報取得
      ***************************************************** */
@@ -265,7 +270,7 @@ export default {
         const img_info = {
           name      : this.importItem.info.name,
           url       : img_url,
-          created_at: moment().format('YYYY-MM-DD HH:mm:ss')
+          created_at: date.getTime(),
         }
 
         // URLをDBに保存

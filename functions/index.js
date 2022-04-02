@@ -8,8 +8,10 @@ const axios     = require('axios');
 const line      = require('@line/bot-sdk');
 const middleware = line.middleware;
 
-const region    = 'asia-northeast2'
-const timezone  = 'Asia/Tokyo'
+const region    = 'asia-northeast2';
+const timezone  = 'Asia/Tokyo';
+const date      = new Date();
+
 admin.initializeApp();
 
 /** **********************************************************************************************************
@@ -33,6 +35,7 @@ line_wh.post('/', async (req, res) => {
   }
   res.json([]);
 });
+
 line_wh.use((err, req, res, next) => {
   if (err instanceof SignatureValidationFailed) {
     res.status(401).send(err.signature)
@@ -59,7 +62,7 @@ async function handleEvent(event) {
         if (event.message.text == '予約確認') {
           const reseives = await admin.firestore()
             .collection('schedule')
-            .where('start', '>', event.timestamp)
+            .where('start', '>=', event.timestamp)
             .get();
 
           let data;
@@ -67,7 +70,7 @@ async function handleEvent(event) {
           reseives.forEach(d => {
             data = d.data();
             if (data.userId === event.source.userId) {
-              arrMsg.push(moment(data.start).add(9, 'h').format('YYYY年M月D日 H:mm') + '～');
+              arrMsg.push(moment(data.start).format('YYYY年M月D日 H:mm') + '～');
             }
           });
 
@@ -106,11 +109,16 @@ async function handleEvent(event) {
             let ret = await line_client.replyMessage(event.replyToken, msg_format);
             functions.logger.log(JSON.stringify(ret, null, "\t"));
           } else {
+            // LINE設定
+            const config = await admin.firestore().doc('setting/line').get().then(doc => {
+              return doc.data();
+            });
+
+            const msgText = config.no_such_scenario_message || 'メッセージありがとうございます！\n\n申し訳ございませんが、送信されたメッセージについて答えできません。\nメッセージ文を変えて送っていただくとお答えできるかもしれません。';
+
             let ret = await line_client.replyMessage(event.replyToken, {
               type: 'text',
-              text: 'メッセージありがとうございます！\n\n \
-申し訳ございませんが、送信されたメッセージについて答えできません。\n \
-メッセージ文を変えて送っていただくとお答えできるかもしれません。'
+              text: msgText,
             });
             functions.logger.log(JSON.stringify(ret, null, "\t"));
           }
@@ -172,17 +180,18 @@ async function handleEvent(event) {
       return doc.data();
     });
 
-    let ret, changeRichmenu;
     if (!customer) {
       // --------------------------
       // 初回友だち追加
       // --------------------------
-      ret = await line_client.replyMessage(event.replyToken, config.friend_added_message);
+      const msgText = config.friend_added_message || '友だち登録ありがとうございます！';
+      ret = await line_client.replyMessage(event.replyToken, msgText);
     } else {
       // --------------------------
       // 友だち再登録
       // --------------------------
-      ret = await line_client.replyMessage(event.replyToken, config.turn_back_message);
+      const msgText = config.turn_back_message || 'おかえりなさいませ！';
+      ret = await line_client.replyMessage(event.replyToken, msgText);
     }
 
     // Firestoreにユーザーデータ登録
@@ -251,11 +260,12 @@ exports.scheduledMessage = functions.region(region).pubsub
 
   // --------------------------------------------------------------------------------------------
 
-  const nowDatetime = moment().add(9, 'h').format('YYYY-MM-DD HH:mm');
-  const fs = await admin.firestore()
+  const now = date.getTime();
+  const fs  = await admin.firestore()
     .collection('message')
     .where('active', '==', true)
-    .where('reserve_at', '==', nowDatetime)
+    .where('reserve_at', '>=', moment(now).startOf('second'))
+    .where('reserve_at', '<=', moment(now).endOf('second'))
     .get();
 
   const messages = [];
@@ -270,10 +280,13 @@ exports.scheduledMessage = functions.region(region).pubsub
   /** ------------------------+
    * 取得したメッセージを検証 */
   if(messages.length){
-    let dataId, lineRet;
-    await Promise.all(messages.map(async doc => {
-      dataId = doc.id;
-      delete doc.id;
+    await Promise.all(messages.map( async msg => send_line_message(msg) ));
+  }
+
+  async function send_line_message(doc) {
+    let lineRet;
+    let dataId = doc.id;
+    delete doc.id;
 
 
       /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
@@ -382,8 +395,9 @@ exports.scheduledMessage = functions.region(region).pubsub
       /** **************************************
        * 送信日時を更新
        ************************************** */
-      if (lineRet) await admin.firestore().doc(`message/${dataId}`).set({sended_at: nowDatetime+':00'}, { merge: true });
-    }));
+      if (lineRet){
+        await admin.firestore().doc(`message/${dataId}`).set({sended_at: now }, { merge: true });
+      }
   }
 
 
@@ -403,39 +417,40 @@ exports.steppedMessage = functions.region(region).pubsub
 
   // --------------------------------------------------------------------------------------------
 
-  const now = moment().add(9, 'h')
 
   /** **************************************
    * ステップ配信メッセージを取得
    ************************************** */
-  const fs01     = await admin.firestore().collection('message').where('step_timing', '!=', '').get();
-  const messages = [];
-  fs01.forEach(d => messages.push( d.data()) );
+  const fs01        = await admin.firestore().collection('message').where('step_timing', '!=', '').get();
+  const messages    = [];
+  const now_oclock  = moment().format('H');
+  fs01.forEach(d => messages.push( d.data() ));
   functions.logger.log(`${messages.length} case applicable`);
 
   if (messages.length) {
-
     /** ------------------------+
      * 取得したメッセージを検証 */
-    await Promise.all(messages.map(async doc => {
-      let timing = doc.step_timing.split('-');
-      let timing_day    = timing[0] || 1; // default: 1日前
-      let timing_oclock = timing[1] || 8; // default: 08:00
-      let target_registered_at = moment(now).subtract(timing_day, 'd').format('YYYY-MM-DD');
+    await Promise.all(messages.map( async msg => send_line_message(msg) ));
+
+    async function send_line_message(doc) {
+      const timing = doc.step_timing.split('-');
+      const timing_day    = timing[0] || 1; // default: 1日前
+      const timing_oclock = timing[1] || 8; // default: 08:00
+      const target_registered_start = moment().subtract(timing_day, 'd').startOf('day').valueOf();
+      const target_registered_end   = moment().subtract(timing_day, 'd').endOf('day').valueOf();
 
       /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
        * 判定１
        * 現在時とメッセージの送信指定時刻が同じ場合に実行
        *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
-      if (now.format('H') == timing_oclock) {
+      if (now_oclock == timing_oclock) {
         /** **************************************
          * メッセージの条件に合うユーザーを取得
          ************************************** */
         let fs02 = await admin.firestore()
           .collection('customer')
-          .orderBy('field-line_follow_datetime')
-          .startAt(target_registered_at)
-          .endAt(target_registered_at + "\uf8ff")
+          .where('field-line_follow_datetime', '>=', target_registered_start)
+          .where('field-line_follow_datetime', '<=', target_registered_end)
           .get();
 
         const customers = [];
@@ -453,7 +468,6 @@ exports.steppedMessage = functions.region(region).pubsub
             customers.push(data);
           }
         });
-        functions.logger.log(375, customers);
 
         for (let customer of customers) {
           let customer_name = customer['field-name'] || customer['field-line_user_name'];
@@ -476,10 +490,10 @@ exports.steppedMessage = functions.region(region).pubsub
           })
 
           let lineRet = await line_client.pushMessage(customer['field-line_user_id'], msg_format, doc.notification_disabled);
-          functions.logger.log(418, JSON.stringify(lineRet));
+          // functions.logger.log(418, JSON.stringify(lineRet));
         }
       }
-    }))
+    }
     return null;
   }
   // --------------------------------------------------------------------------------------------
@@ -494,22 +508,16 @@ exports.scheduledReserve = functions.region(region).pubsub
   .schedule('0 12 * * *')
   .timeZone(timezone)
   .onRun(async () => {
-    // .schedule('*/2 * * * *')
     // --------------------------------------------------------------------------------------------
 
-    functions.logger.log(moment().format('YYYY/MM/DD HH:mm:ss'))
-    functions.logger.log(moment().add(9, 'h').format('YYYY/MM/DD HH:mm:ss'))
-    const today         = moment().add(9, 'h')
-    const tomorrowStart = moment(today).add(1, 'days').startOf('day').valueOf()
-    const tomorrowEnd   = moment(today).add(1, 'days').endOf('day').valueOf()
-    const tmStYmd       = moment(tomorrowStart).format('YYYY年MM月DD日 HH:mm')
-    const tmEnYmd       = moment(tomorrowEnd).format('YYYY年MM月DD日 HH:mm')
+    const tomorrowStart = moment().add(1, 'days').startOf('day');
+    const tomorrowEnd   = moment().add(1, 'days').endOf('day');
 
 
     const fs = await admin.firestore()
       .collection('schedule')
-      .where('start', '>', tomorrowStart)
-      .where('start', '<', tomorrowEnd)
+      .where('start', '>=', moment(tomorrowStart).valueOf())
+      .where('start', '<=', moment(tomorrowEnd).valueOf())
       .get()
 
 
@@ -526,7 +534,7 @@ exports.scheduledReserve = functions.region(region).pubsub
       // });
 
       await Promise.all(reserve_data.map(async data => {
-        let startDate = moment(data.start).add(9, 'h').format('YYYY年MM月DD日 HH:mm')
+        let startDate = moment(data.start).format('YYYY年MM月DD日 HH:mm')
 
         let lineRet = await line_client.pushMessage(data.userId, {
           type: 'text',

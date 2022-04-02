@@ -485,7 +485,7 @@
 <script>
 import { doc, collection, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy } from "firebase/firestore";
 import { db } from '~/plugins/firebase.js';
-import moment from 'moment'
+const date = new Date();
 
 export default {
   props: ['page'],
@@ -615,8 +615,6 @@ export default {
      * データ保存
      ***************************************************** */
     async saveData() {
-      // const now = moment().add(9, 'hours').format('YYYY-MM-DD HH:mm:ss')
-      const now = moment().format('YYYY-MM-DD HH:mm:ss')
       // ----------------------
       // 不足テキスト追加処理
       // ----------------------
@@ -633,12 +631,12 @@ export default {
           this.formInfo.push({
             collection: this.slug,
             name      : this.formName,
-            created_at: now,
+            created_at: date.getTime(),
             updated_at: '',
           })
         } else {
           let n = this.formInfo.findIndex(v => v.collection === this.slug)
-          this.$set(this.formInfo[n], 'updated_at', now)
+          this.$set(this.formInfo[n], 'updated_at', date.getTime())
 
           // ----------------------
           // 元あるフィールドを削除

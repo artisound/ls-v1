@@ -43,7 +43,6 @@
             small
             depressed
             color="primary"
-            class="d-sm-block d-none"
             @click="activeData=item;dialogDetail=!dialogDetail;"
           ><v-icon>mdi-file</v-icon></v-btn>
         </template>
@@ -71,6 +70,7 @@
           <span>{{item.messages}}件</span>
         </template>
 
+<!--
         <template v-slot:item.actions="{ item }">
           <v-btn
             outlined
@@ -83,6 +83,7 @@
             <v-icon small title="クローズ">mdi-logout-variant</v-icon>
           </v-btn>
         </template>
+-->
       </v-data-table>
     </v-container>
 
@@ -109,7 +110,7 @@
           </v-btn>
         </v-toolbar>
 
-        <v-card-text>
+        <v-card-text class="pa-0">
           <v-form
             class="mt-5 mb-3"
           >
@@ -336,7 +337,7 @@ export default {
         { text: '最終送受信日時', value: 'updated_at',    align: 'center' },
         { text: 'ステータス',     value: 'status',        align: 'center' },
         { text: 'メッセージ数',   value: 'messages',      align: 'center' },
-        { text: '',               value: 'actions',       align: 'center', sortable: false, width: '30px' },
+        // { text: '',               value: 'actions',       align: 'center', sortable: false, width: '30px' },
       ],
       search: '',
 

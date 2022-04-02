@@ -605,6 +605,7 @@
 import { doc, collection, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
 import { db } from '~/plugins/firebase.js';
 import moment from 'moment'
+const date = new Date();
 
 export default {
   props: ['page'],
@@ -971,8 +972,8 @@ export default {
       console.log(saveData)
 
       try {
-        saveData.created_at = saveData.created_at || moment().format('YYYY-MM-DD HH:mm:ss');
-        saveData.updated_at = moment().format('YYYY-MM-DD HH:mm:ss');
+        saveData.created_at = saveData.created_at || date.getTime();
+        saveData.updated_at = date.getTime();
 
         if(this.docId == 'new') {
           await setDoc(doc(collection(db, this.page)), saveData)

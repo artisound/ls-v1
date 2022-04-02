@@ -115,8 +115,8 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { getAuth, signInAnonymously, signInWithEmailAndPassword, fetchSignInMethodsForEmail, EmailAuthProvider, linkWithCredential, signOut, deleteUser } from "firebase/auth";
 import { firebaseApp, auth, db } from '~/plugins/firebase.js';
 import { lineMsgApi } from '~/plugins/line_api.js';
-import sha256 from 'crypto-js/sha256';
 
+const LIFF_REGIST = (process.env.NODE_ENV === 'development') ? process.env.LIFF_REGIST_DEV : process.env.LIFF_REGIST
 export default {
   layout: 'liff',
   data() {
@@ -180,7 +180,7 @@ export default {
     // ==================================
     // ① LIFF ユーザー情報取得
     // ==================================
-    const getLiff   = await getLiffInfo(process.env.LIFF_REGIST)
+    const getLiff   = await getLiffInfo(LIFF_REGIST)
     this.userId    = getLiff.userId
 
     // ==================================

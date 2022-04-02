@@ -93,6 +93,7 @@ import { collection, doc, setDoc, getDocs, query, where } from "firebase/firesto
 import { signInWithEmailAndPassword, fetchSignInMethodsForEmail, signOut } from "firebase/auth";
 import { auth, db } from '~/plugins/firebase.js';
 
+const LIFF_STAFF_SYNC = (process.env.NODE_ENV === 'development') ? process.env.LIFF_STAFF_SYNC_DEV : process.env.LIFF_STAFF_SYNC
 export default {
   layout: 'liff',
   data() {
@@ -137,7 +138,7 @@ export default {
     // ==================================
     // ① LIFF ユーザー情報取得
     // ==================================
-    this.lineUser = await getLiffInfo(process.env.LIFF_STAFF_SYNC)
+    this.lineUser = await getLiffInfo(LIFF_STAFF_SYNC)
     console.log(this.lineUser)
 
 
