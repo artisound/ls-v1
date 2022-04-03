@@ -198,6 +198,10 @@ export default {
           icon: "mdi-view-quilt",
           title: "リッチメニュー",
           to: "/richmenu",
+        }, {
+          icon: "mdi-math-log",
+          title: "配信ログ(beta)",
+          to: "/msg_log",
         },
       ],
       settingItems: [

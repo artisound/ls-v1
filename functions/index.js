@@ -1,29 +1,35 @@
 'use strict';
 require('dotenv').config();
-const functions = require("firebase-functions");
-const admin     = require('firebase-admin');
-const express   = require('express');
-const moment    = require('moment');
-const axios     = require('axios');
-const line      = require('@line/bot-sdk');
+const functions  = require("firebase-functions");
+const admin      = require('firebase-admin');
+const express    = require('express');
+const moment     = require('moment');
+const axios      = require('axios');
+const line       = require('@line/bot-sdk');
 const middleware = line.middleware;
 
-const region    = 'asia-northeast2';
-const timezone  = 'Asia/Tokyo';
-const date      = new Date();
+const date       = new Date();
+const region     = 'asia-northeast2';
+const timezone   = 'Asia/Tokyo';
 
 admin.initializeApp();
 
 /** **********************************************************************************************************
  * LINE Callback
  ********************************************************************************************************** */
-const config = {
+const line_public_config = {
   channelSecret     : process.env.LINE_PUBLIC_SECRET,
   channelAccessToken: process.env.LINE_PUBLIC_TOKEN,
-}
-const line_wh     = express();
-const line_client = new line.Client(config);
-line_wh.use(middleware(config))
+};
+const line_admin_config = {
+  channelSecret     : process.env.LINE_ADMIN_SECRET,
+  channelAccessToken: process.env.LINE_ADMIN_TOKEN,
+};
+
+const line_wh             = express();
+const line_public_client  = new line.Client(line_public_config);
+const line_admin_client   = new line.Client(line_admin_config);
+line_wh.use(middleware(line_public_config))
 line_wh.post('/', async (req, res) => {
   req.body.destination // user ID of the bot (optional)
 
@@ -51,10 +57,12 @@ line_wh.use((err, req, res, next) => {
  * LINE Callback
  ********************************************************************************************************** */
 async function handleEvent(event) {
+  functions.logger.log(event.message)
   // *********************************************************
   // メッセージイベント
   // *********************************************************
   if(event.type == 'message') {
+    const profile = await line_public_client.getProfile(event.source.userId);
     //ユーザから送られた各メッセージに対する処理を実装する。
     switch (event.message.type) {
       case 'text':
@@ -77,7 +85,7 @@ async function handleEvent(event) {
           let message;
           message = (arrMsg.length) ? arrMsg.join('\n') : 'ご予約はありません。'
 
-          let ret = await line_client.replyMessage(event.replyToken, {
+          let ret = await line_public_client.replyMessage(event.replyToken, {
             type: 'text',
             text: message,
           })
@@ -106,60 +114,84 @@ async function handleEvent(event) {
             }
             functions.logger.log(JSON.stringify(msg_format));
 
-            let ret = await line_client.replyMessage(event.replyToken, msg_format);
+            let ret = await line_public_client.replyMessage(event.replyToken, msg_format);
             functions.logger.log(JSON.stringify(ret, null, "\t"));
           } else {
             // LINE設定
-            const config = await admin.firestore().doc('setting/line').get().then(doc => {
-              return doc.data();
-            });
+            // const config = await admin.firestore().doc('setting/line').get().then(doc => {
+            //   return doc.data();
+            // });
+            // const msgText = config.no_such_scenario_message || 'メッセージありがとうございます！\n\n申し訳ございませんが、送信されたメッセージについて答えできません。\nメッセージ文を変えて送っていただくとお答えできるかもしれません。';
 
-            const msgText = config.no_such_scenario_message || 'メッセージありがとうございます！\n\n申し訳ございませんが、送信されたメッセージについて答えできません。\nメッセージ文を変えて送っていただくとお答えできるかもしれません。';
 
-            let ret = await line_client.replyMessage(event.replyToken, {
-              type: 'text',
-              text: msgText,
+            const config = await admin.firestore().doc(`customer/${event.source.userId}`).get().then(doc => { return doc.data() });
+            const staffs = await admin.firestore().collection('staff').get().then(docs => {
+              const staffs = [];
+              docs.forEach(d => {
+                let document = d.data();
+                if (document['field-line_user_id']) staffs.push(document['field-line_user_id']);
+              });
+              return staffs;
             });
+            functions.logger.log(staffs);
+
+            const user_name = config['field-line_user_name'] || profile.displayName;
+            const msgText   = `From: ${user_name}\n----------\n${event.message.text}`;
+
+            let ret = await line_admin_client.multicast(staffs, { type: 'text', text: msgText });
             functions.logger.log(JSON.stringify(ret, null, "\t"));
           }
         }
         return;
 
       // case 'image':
-      //   return await line_client.replyMessage(event.replyToken, {
+      //   return await line_public_client.replyMessage(event.replyToken, {
       //     type: 'text',
       //     text: '画像を受け取りました。'
       //   });
 
       // case 'video':
-      //   return await line_client.replyMessage(event.replyToken, {
+      //   return await line_public_client.replyMessage(event.replyToken, {
       //     type: 'text',
       //     text: '動画を受け取りました。'
       //   });
 
       // case 'audio':
-      //   return await line_client.replyMessage(event.replyToken, {
+      //   return await line_public_client.replyMessage(event.replyToken, {
       //     type: 'text',
       //     text: '音声を受け取りました。'
       //   });
 
       // case 'file':
-      //   return await line_client.replyMessage(event.replyToken, {
+      //   return await line_public_client.replyMessage(event.replyToken, {
       //     type: 'text',
       //     text: 'ファイルを受け取りました。'
       //   });
 
       // case 'location':
-      //   return await line_client.replyMessage(event.replyToken, {
+      //   return await line_public_client.replyMessage(event.replyToken, {
       //     type: 'text',
       //     text: '位置情報を受け取りました。'
       //   });
 
-      // case 'sticker':
-      //   return await line_client.replyMessage(event.replyToken, {
-      //     type: 'text',
-      //     text: 'スタンプを受け取りました。'
-      //   });
+      case 'sticker':
+        const config = await admin.firestore().doc(`customer/${event.source.userId}`).get().then(doc => { return doc.data() });
+        const staffs = await admin.firestore().collection('staff').get().then(docs => {
+          const staffs = [];
+          docs.forEach(d => {
+            let document = d.data();
+            if (document['field-line_user_id']) staffs.push(document['field-line_user_id']);
+          });
+          return staffs;
+        });
+        functions.logger.log(staffs);
+
+        const user_name = config['field-name'] || profile.displayName;
+        const msgText   = `From: ${user_name}\n----------\nスタンプが届きました。`;
+
+        let ret = await line_admin_client.multicast(staffs, { type: 'text', text: msgText });
+        functions.logger.log(ret);
+        return;
 
       default:
         return Promise.resolve(null);
@@ -180,22 +212,43 @@ async function handleEvent(event) {
       return doc.data();
     });
 
+    let ret, msgText;
     if (!customer) {
       // --------------------------
       // 初回友だち追加
       // --------------------------
-      const msgText = config.friend_added_message || '友だち登録ありがとうございます！';
-      ret = await line_client.replyMessage(event.replyToken, msgText);
+      msgText = config.friend_added_message || { type: 'text', text: '友だち登録ありがとうございます！' };
+
+      /** **************************************
+       * メッセージ送信
+       ************************************** */
+      ret = await line_public_client.replyMessage(event.replyToken, msgText);
     } else {
       // --------------------------
       // 友だち再登録
       // --------------------------
-      const msgText = config.turn_back_message || 'おかえりなさいませ！';
-      ret = await line_client.replyMessage(event.replyToken, msgText);
+      msgText = config.turn_back_message || { type: 'text', text: 'おかえりなさいませ！' };
+
+      /** **************************************
+       * メッセージ送信
+       ************************************** */
+      ret = await line_public_client.replyMessage(event.replyToken, msgText);
     }
 
+    /** **************************************
+     * メッセージログ保存
+     ************************************** */
+    const log = await admin.firestore().collection('msg_log').add({
+      timestamp : date.getTime(),
+      action    : '再フォロー',
+      sended_to : event.source.userId,
+      response  : msgText,
+      message_obj: ret,
+    });
+    functions.logger.log(log)
+
     // Firestoreにユーザーデータ登録
-    const profile = await line_client.getProfile(event.source.userId);
+    const profile = await line_public_client.getProfile(event.source.userId);
     await admin.firestore().collection('customer').doc(event.source.userId).set({
       'field-line_user_id'        : event.source.userId,
       'field-line_user_name'      : profile.displayName,
@@ -228,8 +281,6 @@ async function handleEvent(event) {
     });
   }
 }
-
-
 exports.webhook = functions.region(region).https.onRequest(line_wh);
 
 /** **********************************************************************************************************
@@ -263,7 +314,6 @@ exports.scheduledMessage = functions.region(region).pubsub
   const now = date.getTime();
   const fs  = await admin.firestore()
     .collection('message')
-    .where('active', '==', true)
     .where('reserve_at', '>=', moment(now).startOf('second'))
     .where('reserve_at', '<=', moment(now).endOf('second'))
     .get();
@@ -273,7 +323,7 @@ exports.scheduledMessage = functions.region(region).pubsub
   fs.forEach(d => {
     data = d.data();
     data.id = d.id;
-    messages.push(data);
+    if(data.active) messages.push(data);
   });
   functions.logger.log(`${messages.length} case applicable`);
 
@@ -289,89 +339,78 @@ exports.scheduledMessage = functions.region(region).pubsub
     delete doc.id;
 
 
+    /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+     * 判定１
+     * メッセージの条件に合うユーザーを取得
+     * - 対象のユーザーIDにメッセージ送信
+     *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
+    const customers = [];
+    if (doc.collection.length) {
       /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
-       * 判定１
-       * メッセージの条件に合うユーザーを取得
-       * - 対象のユーザーIDにメッセージ送信
+       * 判定２
+       * メッセージに"text"または"json"がある
+       * - 対象のユーザーIDごとにメッセージ送信
        *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
-      const customers = [];
-      if (doc.collection.length) {
-        /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
-         * 判定２
-         * メッセージに"text"または"json"がある
-         * - 対象のユーザーIDごとにメッセージ送信
-         *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
-        if (doc.msg_format.filter(v => ['text', 'json'].includes(v.type))) {
-          for (let customer of doc.collection) {
-            /** **************************************
-             * ユーザー情報取得
-             ************************************** */
-            await admin.firestore()
-              .collection('customer')
-              .doc(customer)
-              .get()
-              .then( resp => {
-                functions.logger.log(301, resp);
-                functions.logger.log(302, resp.data());
-                customers.push(resp.data());
-              }).catch( err => functions.logger.log(301, err) );
-          }
-
-          functions.logger.log(309, customers);
-          for (let customer of customers) {
-            let customer_name = customer['field-name'] || customer['field-line_user_name'];
-            functions.logger.log(312, customer_name);
-
-            /** **************************************
-             * メッセージフォーマットを再生成
-             ************************************** */
-            const msg_format = [];
-            doc.msg_format.forEach(msg => {
-              if (msg.type == 'json') {
-                let replaced_str_format = msg.str_format.replace(/\{\{name\}\}/g, customer_name);
-                msg.format = strToJson(replaced_str_format)
-                msg_format.push(msg.format)
-              } else if (msg.type == 'text') {
-                msg.text = msg.text.replace(/\{\{name\}\}/g, customer_name);
-                msg_format.push(msg);
-              } else {
-                msg_format.push(msg);
-              }
-            })
-
-            /** **************************************
-             * メッセージ送信
-             ************************************** */
-            lineRet = await line_client.pushMessage(customer['field-line_user_id'], msg_format, doc.notification_disabled);
-            functions.logger.log(333, lineRet);
-          }
+      if (doc.msg_format.filter(v => ['text', 'json'].includes(v.type))) {
+        for (let customer of doc.collection) {
+          /** **************************************
+           * ユーザー情報取得
+           ************************************** */
+          await admin.firestore()
+            .collection('customer')
+            .doc(customer)
+            .get()
+            .then( resp => {
+              functions.logger.log(301, resp);
+              functions.logger.log(302, resp.data());
+              customers.push(resp.data());
+            }).catch( err => functions.logger.log(301, err) );
         }
-        /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
-         * 判定２
-         * メッセージに"text"または"json"がある
-         * - 対象のユーザーIDに一斉メッセージ送信
-         *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
-        else {
+
+        functions.logger.log(309, customers);
+        for (let customer of customers) {
+          let customer_name = customer['field-name'] || customer['field-line_user_name'];
+          functions.logger.log(312, customer_name);
+
+          /** **************************************
+           * メッセージフォーマットを再生成
+           ************************************** */
           const msg_format = [];
-          for (let msg of doc.msg_format) {
+          doc.msg_format.forEach(msg => {
             if (msg.type == 'json') {
-              msg.format = this.strToJson(msg.str_format)
+              let replaced_str_format = msg.str_format.replace(/\{\{name\}\}/g, customer_name);
+              msg.format = strToJson(replaced_str_format)
               msg_format.push(msg.format)
+            } else if (msg.type == 'text') {
+              msg.text = msg.text.replace(/\{\{name\}\}/g, customer_name);
+              msg_format.push(msg);
             } else {
-              msg_format.push(msg)
+              msg_format.push(msg);
             }
-          }
+          })
+
           /** **************************************
            * メッセージ送信
            ************************************** */
-          lineRet = await line_client.multicast(doc.collection, msg_format, doc.notification_disabled);
-          functions.logger.log(346, lineRet);
+          lineRet = await line_public_client.pushMessage(customer['field-line_user_id'], msg_format, doc.notification_disabled);
+
+          /** **************************************
+           * メッセージログ保存
+           ************************************** */
+          await admin.firestore().collection('msg_log').add({
+            timestamp   : date.getTime(),
+            action      : '予約配信',
+            sended_to   : customer['field-line_user_id'],
+            response    : msg_format,
+            message_obj : lineRet,
+          });
+          functions.logger.log(333, lineRet);
         }
       }
       /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
-       * 判定１
-       * メッセージの条件に合うユーザーを取得
-       * - 全ユーザーに一斉送信
+       * 判定２
+       * メッセージに"text"または"json"がある
+       * - 対象のユーザーIDに一斉メッセージ送信
        *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
       else {
         const msg_format = [];
@@ -386,18 +425,62 @@ exports.scheduledMessage = functions.region(region).pubsub
         /** **************************************
          * メッセージ送信
          ************************************** */
-        lineRet = await line_client.broadcast(msg_format, doc.notification_disabled);
-        functions.logger.log(359, lineRet);
-      }
+        lineRet = await line_public_client.multicast(doc.collection, msg_format, doc.notification_disabled);
 
-      functions.logger.log(362, lineRet);
+        /** **************************************
+         * メッセージログ保存
+         ************************************** */
+        await admin.firestore().collection('msg_log').add({
+          timestamp   : date.getTime(),
+          action      : '予約配信',
+          sended_to   : doc.collection,
+          response    : msg_format,
+          message_obj : lineRet,
+        });
+        functions.logger.log(346, lineRet);
+      }
+    }
+    /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+     * 判定１
+     * メッセージの条件に合うユーザーを取得
+     * - 全ユーザーに一斉送信
+     *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* */
+    else {
+      const msg_format = [];
+      for (let msg of doc.msg_format) {
+        if (msg.type == 'json') {
+          msg.format = this.strToJson(msg.str_format)
+          msg_format.push(msg.format)
+        } else {
+          msg_format.push(msg)
+        }
+      }
+      /** **************************************
+       * メッセージ送信
+       ************************************** */
+      lineRet = await line_public_client.broadcast(msg_format, doc.notification_disabled);
 
       /** **************************************
-       * 送信日時を更新
+       * メッセージログ保存
        ************************************** */
-      if (lineRet){
-        await admin.firestore().doc(`message/${dataId}`).set({sended_at: now }, { merge: true });
-      }
+      await admin.firestore().collection('msg_log').add({
+        timestamp  : date.getTime(),
+        action     : '予約配信',
+        sended_to  : 'all_user',
+        response   : msg_format,
+        message_obj: lineRet,
+      });
+      functions.logger.log(359, lineRet);
+    }
+
+    functions.logger.log(362, lineRet);
+
+    /** **************************************
+     * 送信日時を更新
+     ************************************** */
+    if (lineRet){
+      await admin.firestore().doc(`message/${dataId}`).set({sended_at: now }, { merge: true });
+    }
   }
 
 
@@ -464,9 +547,7 @@ exports.steppedMessage = functions.region(region).pubsub
             data['field-line_user_id'] &&                 // LINEユーザーIDあり
             // !data['field-line_block_datetime'] &&         // ブロック歴なし
             data['field-line_follow_status'] == 'follow'  // フォロー中
-          ) {
-            customers.push(data);
-          }
+          ) customers.push(data);
         });
 
         for (let customer of customers) {
@@ -489,7 +570,21 @@ exports.steppedMessage = functions.region(region).pubsub
             }
           })
 
-          let lineRet = await line_client.pushMessage(customer['field-line_user_id'], msg_format, doc.notification_disabled);
+          /** **************************************
+           * メッセージ送信
+           ************************************** */
+          let lineRet = await line_public_client.pushMessage(customer['field-line_user_id'], msg_format, doc.notification_disabled);
+
+          /** **************************************
+           * メッセージログ保存
+           ************************************** */
+          await admin.firestore().collection('msg_log').add({
+            timestamp  : date.getTime(),
+            action     : 'ステップ配信',
+            sended_to  : customer['field-line_user_id'],
+            response   : msg_format,
+            message_obj: lineRet,
+          });
           // functions.logger.log(418, JSON.stringify(lineRet));
         }
       }
@@ -536,9 +631,23 @@ exports.scheduledReserve = functions.region(region).pubsub
       await Promise.all(reserve_data.map(async data => {
         let startDate = moment(data.start).format('YYYY年MM月DD日 HH:mm')
 
-        let lineRet = await line_client.pushMessage(data.userId, {
+        /** **************************************
+         * メッセージ送信
+         ************************************** */
+        let lineRet = await line_public_client.pushMessage(data.userId, {
           type: 'text',
           text: `明日${startDate}にご予約をいただいております。\nお気をつけてお越しください。`
+        });
+
+        /** **************************************
+         * メッセージログ保存
+         ************************************** */
+        await admin.firestore().collection('msg_log').add({
+          timestamp  : date.getTime(),
+          action     : '予約1日前配信',
+          sended_to  : data.userId,
+          response   : msg_format,
+          message_obj: lineRet,
         });
         // functions.logger.log(lineRet);
       }));

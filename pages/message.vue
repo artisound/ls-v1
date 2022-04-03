@@ -17,50 +17,50 @@
         no-results-text="データがありません。"
       >
 
-          <template v-slot:top>
-            <div class="d-flex flex-wrap grow px-4 p-2">
-              <v-card class="elevation-4 pa-5 mt-n5 mb-2" color="success" dark>
-                <v-icon style="font-size:32px;">mdi-forum</v-icon>
-              </v-card>
-              <v-spacer></v-spacer>
+        <template v-slot:top>
+          <div class="d-flex flex-wrap grow px-4 p-2">
+            <v-card class="elevation-4 pa-5 mt-n5 mb-2" color="success" dark>
+              <v-icon style="font-size:32px;">mdi-forum</v-icon>
+            </v-card>
+            <v-spacer></v-spacer>
 
-              <v-tooltip top>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn
-                    icon
-                    small
-                    color="green"
-                    class="align-self-center"
-                    @click="getDataListByBtn"
-                    v-bind="attrs"
-                    v-on="on"
-                  ><v-icon>mdi-autorenew</v-icon></v-btn>
-                </template>
-                <span>再取得</span>
-              </v-tooltip>
-            </div>
+            <v-tooltip top>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  small
+                  color="green"
+                  class="align-self-center"
+                  @click="getDataListByBtn"
+                  v-bind="attrs"
+                  v-on="on"
+                ><v-icon>mdi-autorenew</v-icon></v-btn>
+              </template>
+              <span>再取得</span>
+            </v-tooltip>
+          </div>
 
-            <v-divider></v-divider>
+          <v-divider></v-divider>
 
-            <v-toolbar color="" flat>
-              <v-text-field
-                v-model="search"
-                append-icon="mdi-magnify"
-                label="検索"
-                single-line
-                hide-details
-              ></v-text-field>
-              <v-spacer></v-spacer>
-              <v-spacer></v-spacer>
-              <v-btn
-                text
-                router
-                exact
-                color="success"
-                :to="`/${page}/new`"
-              ><v-icon class="me-2">mdi-plus</v-icon>作成</v-btn>
-            </v-toolbar>
-          </template>
+          <v-toolbar color="" flat>
+            <v-text-field
+              v-model="search"
+              append-icon="mdi-magnify"
+              label="検索"
+              single-line
+              hide-details
+            ></v-text-field>
+            <v-spacer></v-spacer>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              router
+              exact
+              color="success"
+              :to="`/${page}/new`"
+            ><v-icon class="me-2">mdi-plus</v-icon>作成</v-btn>
+          </v-toolbar>
+        </template>
 
         <template v-slot:item.status="{ item }">
           <v-chip
@@ -222,7 +222,7 @@
 import { doc, collection, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
 import { db } from '~/plugins/firebase.js';
 import {lineMsgApi} from '~/plugins/line_api.js';
-import moment from 'moment'
+import moment from 'moment';
 
 export default {
   layout: 'main',
