@@ -35,27 +35,71 @@
           <v-divider></v-divider>
 
           <v-card-text class="d-flex">
-                <v-icon
-                  v-text="ins.icon"
-                  style="font-size:18px;"
-                ></v-icon>
-              <v-spacer></v-spacer>
-              <v-btn
-                text
-                color="grey darken-1"
-                :to="ins.link"
-              >
-                {{ins.label}}
-                <v-icon
-                  right
-                  v-text="'mdi-arrow-right-circle'"
-                  style="font-size:18px;"
-                ></v-icon>
-              </v-btn>
+            <v-icon
+              v-text="ins.icon"
+              style="font-size:18px;"
+            ></v-icon>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              color="grey darken-1"
+              :to="ins.link"
+            >
+              {{ins.label}}
+              <v-icon
+                right
+                v-text="'mdi-arrow-right-circle'"
+                style="font-size:18px;"
+              ></v-icon>
+            </v-btn>
           </v-card-text>
         </v-card>
       </v-col>
 
+    </v-row>
+
+    <v-row>
+      <v-col
+        cols="12"
+        lg="3"
+        sm="3"
+      >
+        <v-card class="mt-6">
+          <div class="d-flex flex-wrap grow justify-space-between px-4 p-2">
+
+            <v-card class="elevation-4 pa-5 mt-n5 mb-6" color="primary" dark>
+              <v-icon style="font-size:32px;">mdi-qrcode</v-icon>
+            </v-card>
+
+            <vue-qr
+              width="100%"
+              :text="`https://line.me/R/ti/p/${qr_public}`"
+              :margin="1"
+              class="mb-3"
+            ></vue-qr>
+
+          </div>
+
+          <v-divider></v-divider>
+
+          <v-card-text class="d-flex">
+            <v-icon style="font-size:18px;">mdi-share-variant</v-icon>
+            <v-spacer></v-spacer>
+            <v-btn
+              text
+              color="grey darken-1"
+              to="#"
+            >
+              共有
+              <v-icon
+                right
+                v-text="'mdi-arrow-right-circle'"
+                style="font-size:18px;"
+              ></v-icon>
+            </v-btn>
+          </v-card-text>
+        </v-card>
+      </v-col>
     </v-row>
 
   </v-container>
@@ -84,6 +128,7 @@ export default {
         contacts: { name: '問い合わせ数',       label: 'お問い合わせ',   link: '/contact',  data: 0, color: 'teal',   icon: 'mdi-chat-question' },
         reserves: { name: '本日の予約数',       label: 'スケジュール',   link: '/schedule', data: 0, color: 'orange', icon: 'mdi-calendar-multiselect' },
       },
+      qr_public: process.env.LINE_PUBLIC_ACCOUNT,
       loading: false,
     }
   },

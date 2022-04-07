@@ -360,39 +360,37 @@ exports.scheduledMessage = functions.region(region).pubsub
             .collection('customer')
             .doc(customer)
             .get()
-            .then( resp => {
-              functions.logger.log(301, resp);
-              functions.logger.log(302, resp.data());
-              customers.push(resp.data());
-            }).catch( err => functions.logger.log(301, err) );
+            .then( resp => customers.push(resp.data()) )
+            .catch( err => functions.logger.log(301, err) );
         }
 
-        functions.logger.log(309, customers);
         for (let customer of customers) {
+          let msg_format = JSON.stringify(doc.msg_format);
+          msg_format = JSON.parse(msg_format);
+
           let customer_name = customer['field-name'] || customer['field-line_user_name'];
-          functions.logger.log(312, customer_name);
 
           /** **************************************
            * メッセージフォーマットを再生成
            ************************************** */
-          const msg_format = [];
-          doc.msg_format.forEach(msg => {
+          const send_msg_format = [];
+          msg_format.forEach(msg => {
             if (msg.type == 'json') {
               let replaced_str_format = msg.str_format.replace(/\{\{name\}\}/g, customer_name);
               msg.format = strToJson(replaced_str_format)
-              msg_format.push(msg.format)
+              send_msg_format.push(msg.format)
             } else if (msg.type == 'text') {
               msg.text = msg.text.replace(/\{\{name\}\}/g, customer_name);
-              msg_format.push(msg);
+              send_msg_format.push(msg)
             } else {
-              msg_format.push(msg);
+              send_msg_format.push(msg)
             }
           })
 
           /** **************************************
            * メッセージ送信
            ************************************** */
-          lineRet = await line_public_client.pushMessage(customer['field-line_user_id'], msg_format, doc.notification_disabled);
+          lineRet = await line_public_client.pushMessage(customer['field-line_user_id'], send_msg_format, doc.notification_disabled);
 
           /** **************************************
            * メッセージログ保存
@@ -402,7 +400,7 @@ exports.scheduledMessage = functions.region(region).pubsub
             action     : '予約配信',
             sended_to  : customer['field-line_user_id'],
             response   : lineRet,
-            message_obj: msg_format,
+            message_obj: send_msg_format,
           });
           functions.logger.log(333, lineRet);
         }
@@ -494,7 +492,7 @@ exports.scheduledMessage = functions.region(region).pubsub
  * メッセージ - ステップ配信
  ********************************************************************************************************** */
 exports.steppedMessage = functions.region(region).pubsub
-  .schedule('0 * * * *')
+  .schedule('*/5 * * * *')
   .timeZone(timezone)
   .onRun(async () => {
 
@@ -551,29 +549,32 @@ exports.steppedMessage = functions.region(region).pubsub
         });
 
         for (let customer of customers) {
+          let msg_format = JSON.stringify(doc.msg_format);
+          msg_format = JSON.parse(msg_format);
+
           let customer_name = customer['field-name'] || customer['field-line_user_name'];
 
           /** **************************************
            * メッセージフォーマットを再生成
            ************************************** */
-          const msg_format = [];
-          doc.msg_format.forEach(msg => {
+          const send_msg_format = [];
+          msg_format.forEach(msg => {
             if (msg.type == 'json') {
               let replaced_str_format = msg.str_format.replace(/\{\{name\}\}/g, customer_name);
               msg.format = strToJson(replaced_str_format)
-              msg_format.push(msg.format)
+              send_msg_format.push(msg.format)
             } else if (msg.type == 'text') {
               msg.text = msg.text.replace(/\{\{name\}\}/g, customer_name);
-              msg_format.push(msg)
+              send_msg_format.push(msg)
             } else {
-              msg_format.push(msg)
+              send_msg_format.push(msg)
             }
           })
 
           /** **************************************
            * メッセージ送信
            ************************************** */
-          let lineRet = await line_public_client.pushMessage(customer['field-line_user_id'], msg_format, doc.notification_disabled);
+          let lineRet = await line_public_client.pushMessage(customer['field-line_user_id'], send_msg_format, doc.notification_disabled);
 
           /** **************************************
            * メッセージログ保存
@@ -583,7 +584,7 @@ exports.steppedMessage = functions.region(region).pubsub
             action     : 'ステップ配信',
             sended_to  : customer['field-line_user_id'],
             response   : lineRet,
-            message_obj: msg_format,
+            message_obj: send_msg_format,
           });
           // functions.logger.log(418, JSON.stringify(lineRet));
         }

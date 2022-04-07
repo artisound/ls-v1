@@ -1,3 +1,3 @@
 import Vue from 'vue'
-import CodeEditor from 'simple-code-editor';
-Vue.component(CodeEditor.name, CodeEditor)
+import VueQr from 'vue-qr'
+Vue.component(VueQr.name, VueQr)
