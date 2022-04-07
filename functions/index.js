@@ -398,11 +398,11 @@ exports.scheduledMessage = functions.region(region).pubsub
            * メッセージログ保存
            ************************************** */
           await admin.firestore().collection('msg_log').add({
-            timestamp   : date.getTime(),
-            action      : '予約配信',
-            sended_to   : customer['field-line_user_id'],
-            response    : msg_format,
-            message_obj : lineRet,
+            timestamp  : date.getTime(),
+            action     : '予約配信',
+            sended_to  : customer['field-line_user_id'],
+            response   : lineRet,
+            message_obj: msg_format,
           });
           functions.logger.log(333, lineRet);
         }
@@ -431,11 +431,11 @@ exports.scheduledMessage = functions.region(region).pubsub
          * メッセージログ保存
          ************************************** */
         await admin.firestore().collection('msg_log').add({
-          timestamp   : date.getTime(),
-          action      : '予約配信',
-          sended_to   : doc.collection,
-          response    : msg_format,
-          message_obj : lineRet,
+          timestamp  : date.getTime(),
+          action     : '予約配信',
+          sended_to  : doc.collection,
+          response   : lineRet,
+          message_obj: msg_format,
         });
         functions.logger.log(346, lineRet);
       }
@@ -467,8 +467,8 @@ exports.scheduledMessage = functions.region(region).pubsub
         timestamp  : date.getTime(),
         action     : '予約配信',
         sended_to  : 'all_user',
-        response   : msg_format,
-        message_obj: lineRet,
+        response   : lineRet,
+        message_obj: msg_format,
       });
       functions.logger.log(359, lineRet);
     }
@@ -582,8 +582,8 @@ exports.steppedMessage = functions.region(region).pubsub
             timestamp  : date.getTime(),
             action     : 'ステップ配信',
             sended_to  : customer['field-line_user_id'],
-            response   : msg_format,
-            message_obj: lineRet,
+            response   : lineRet,
+            message_obj: msg_format,
           });
           // functions.logger.log(418, JSON.stringify(lineRet));
         }
@@ -634,10 +634,11 @@ exports.scheduledReserve = functions.region(region).pubsub
         /** **************************************
          * メッセージ送信
          ************************************** */
-        let lineRet = await line_public_client.pushMessage(data.userId, {
+        const msg_format = [{
           type: 'text',
           text: `明日${startDate}にご予約をいただいております。\nお気をつけてお越しください。`
-        });
+        }];
+        let lineRet = await line_public_client.pushMessage(data.userId, msg_format);
 
         /** **************************************
          * メッセージログ保存
@@ -646,8 +647,8 @@ exports.scheduledReserve = functions.region(region).pubsub
           timestamp  : date.getTime(),
           action     : '予約1日前配信',
           sended_to  : data.userId,
-          response   : msg_format,
-          message_obj: lineRet,
+          response   : lineRet,
+          message_obj: msg_format,
         });
         // functions.logger.log(lineRet);
       }));
