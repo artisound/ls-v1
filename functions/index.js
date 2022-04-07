@@ -492,7 +492,7 @@ exports.scheduledMessage = functions.region(region).pubsub
  * メッセージ - ステップ配信
  ********************************************************************************************************** */
 exports.steppedMessage = functions.region(region).pubsub
-  .schedule('*/5 * * * *')
+  .schedule('0 * * * *')
   .timeZone(timezone)
   .onRun(async () => {
 
