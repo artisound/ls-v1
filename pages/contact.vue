@@ -316,6 +316,7 @@ import { db } from '~/plugins/firebase.js';
 import { doc, collection, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy } from "firebase/firestore";
 import {lineMsgApi} from '~/plugins/line_api.js';
 import moment from 'moment'
+const date = new Date();
 
 export default {
   layout: 'main',
@@ -472,14 +473,14 @@ export default {
 
       try {
         // 現在日時のタイムスタンプ生成
-        this.replyMessage['field-sended_at'] = moment().unix()
+        this.replyMessage['field-sended_at'] = date.getTime()
         this.replyMessage['field-sended_by'] = this.current_staff['field-line_user_id'] || '未連携スタッフ'
         // ---------------------------
         // 問い合わせルーム情報更新
         // ---------------------------
         this.activeData.status     = 1
         this.activeData.messages   = this.activeData.messages + 1
-        this.activeData.updated_at = moment().format('YYYY-MM-DD HH:mm:ss')
+        this.activeData.updated_at = date.getTime()
         await updateDoc( doc( collection(db, 'contact'), roomId ), this.activeData )
 
         // ---------------------------
