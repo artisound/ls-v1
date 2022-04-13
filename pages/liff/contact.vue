@@ -91,6 +91,11 @@ export default {
     prop: 'overlay',
     event: 'input-name',
   },
+  head() {
+    return {
+      title: 'お問い合わせ'
+    }
+  },
   data() {
     return {
       // ----------------------
@@ -108,6 +113,7 @@ export default {
       field: [],
       input: {},
       datepicker: {},
+      staffs: [],
 
       // ----------------------
       // 問い合わせルーム情報
@@ -146,6 +152,9 @@ export default {
     // ② Firebase ログイン
     // ==================================
     this.login = await signInWithEmailAndPassword(auth, process.env.LIFF_USER_ID, process.env.LIFF_USER_PW)
+
+    // LINE連携しているスタッフ情報を取得
+    this.staffs = await this.getStaffDocs()
 
     if(this.login) {
       // ==================================
@@ -308,8 +317,11 @@ export default {
         // 回答への返信
         // ============================
         if(this.mid){
-          // LINE連携しているスタッフのLINEユーザーID取得
-          const staffLineIds = await this.getStaffDocs()
+          const staffLineIds = []
+          this.staffs.forEach(v => {
+            if(v['field-line_user_id']) staffLineIds.push(v['field-line_user_id'])
+          });
+          console.log(staffLineIds)
 
           // ====================================================================
           // LINEメッセージ送信
@@ -337,7 +349,7 @@ export default {
                 title : `${customerName}様から追加の問い合わせがありました。`,
                 body  : `受付日時：${moment().format('YYYY年M月D日 H:mm')}\n\n件名：${this.input['field-title']}\n本文：\n${this.input['field-body']}`,
                 roomId: this.mid,
-                liffId: process.env.LIFF_CONTACT,
+                liffId: LIFF_CONTACT,
               }),
             }
             const sendMsgAdmin = await this.lineApiAdmin.sendMulticastMessage(param);
@@ -357,20 +369,22 @@ export default {
                 text: `問い合わせを返信しました。\n\n---------------\n件名：${this.input['field-title']}\n本文：\n${this.input['field-body']}\n---------------`,
               }],
             });
-            console.log(sendMsg)
+            console.log(staffLineIds)
 
             // ---------------------------
             // 顧客LINEメッセージ送信
             const customerName = this.corpSetting.corp_name
             const sendMsgAdmin = await this.lineApi.sendPushMessage({
-              to: this.liffInfo.userId,
+              to: this.roomInfo.created_by,
               messages: this.lineMessageFormat({
-                title : `${customerName}からお問い合わせの返信がありました。`,
+                title : `お問い合わせの返信がありました。`,
                 body  : `受付日時：${moment().format('YYYY年M月D日 H:mm')}\n\n件名：${this.input['field-title']}\n本文：\n${this.input['field-body']}`,
                 roomId: this.mid,
-                liffId: process.env.LIFF_CONTACT,
+                liffId: LIFF_CONTACT,
               }),
             });
+
+            this.$set(this.input, 'admin', true)
             console.log(sendMsgAdmin)
           }
 
@@ -442,7 +456,7 @@ export default {
         }
 
         // LIFF画面を閉じる
-        liff.closeWindow()
+        // liff.closeWindow()
       } catch (e) {
         console.error(e)
       }

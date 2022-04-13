@@ -202,7 +202,7 @@
                           >
                             <small
                               class="d-block text-right px-3"
-                            >{{getUserByUserId(customers, activeData.created_by)['field-name']}} 様</small>
+                            >{{getUserByUserId(customers, activeData.created_by)['field-name'] || getUserByUserId(customers, activeData.created_by)['field-line_user_name']}} 様</small>
                             <v-card
                               flat
                               class="px-3 py-1"
@@ -419,7 +419,7 @@ export default {
      ***************************************************** */
     dtFormat(val, format){
       if(Number(val)){
-        return moment.unix(val).format(format)
+        return moment.unix(val / 1000).format(format)
       } else {
         return moment(val).format(format)
       }
@@ -601,7 +601,7 @@ export default {
 
       contactData.forEach(d => {
         let customer    = customerData.find(v => v['field-line_user_id'] === d.created_by)
-        d.customer_name = customer['field-name'];
+        d.customer_name = customer['field-name'] || customer['field-line_user_name'];
       })
       return contactData;
     },

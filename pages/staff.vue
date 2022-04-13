@@ -1,124 +1,167 @@
 <template>
   <div>
     <v-container v-if="$route.path == `/${page}` || $route.path == `/${page}/`">
-      <v-data-table
-        :items="items"
-        :search="search"
-        :headers="headers"
-        :loading="loadingTbl"
-        :footer-props="{ 'items-per-page-text' : '行/ページ:' }"
-        locale="ja"
-        item-key="name"
-        loading-text="読み込み中"
-        class="elevation-2 mt-5"
-        no-data-text="データがありません。"
-        no-results-text="データがありません。"
-      >
+      <v-card>
+        <v-card-title class="d-flex flex-wrap grow mt-5 px-4 py-0">
+          <v-card class="elevation-4 pa-5 mt-n5 mb-2" color="success" dark>
+            <v-icon style="font-size:32px;">mdi-account-tie</v-icon>
+          </v-card>
 
-        <template v-slot:top>
-          <div class="d-flex flex-wrap grow px-4 p-2">
-            <v-card class="elevation-4 pa-5 mt-n5 mb-2" color="success" dark>
-              <v-icon style="font-size:32px;">mdi-account-tie</v-icon>
-            </v-card>
-          </div>
-          <v-divider></v-divider>
+          <v-spacer></v-spacer>
 
-          <v-toolbar color="" flat>
-            <v-text-field
-              v-model="search"
-              append-icon="mdi-magnify"
-              label="検索"
-              single-line
-              hide-details
-            ></v-text-field>
-            <v-spacer></v-spacer>
-            <v-spacer></v-spacer>
-            <v-btn color="success" :to="`/${page}/edit`" text router exact><v-icon class="me-2">mdi-plus</v-icon>作成</v-btn>
-          </v-toolbar>
-        </template>
-
-        <template v-slot:item.detail="{ item }">
           <v-btn
-            icon
-            small
-            depressed
-            color="primary"
-            class="d-sm-block d-none"
-            :to="`/${page}/${item.id}`"
-          ><v-icon>mdi-file</v-icon></v-btn>
-        </template>
-
-        <template v-slot:item.image_url="{ item }">
-          <v-avatar
-            v-if="item.image_url"
-            size="36"
+            text
+            router
+            exact
+            color="success"
+            :to="`/${page}/edit/`"
           >
-            <img :src="item.image_url" :alt="item.name">
-          </v-avatar>
-        </template>
+            <v-icon class="">mdi-plus</v-icon>
+            <span class="d-none d-sm-inline">作成</span>
+          </v-btn>
+        </v-card-title>
+        <v-divider></v-divider>
 
-        <template v-slot:item.line_user_id="{ item }">
-          <v-chip
-            v-if="item.line_user_id"
-            dark
-            color="green"
-          >連携済</v-chip>
+        <v-row
+          class="pa-4"
+          justify="space-between"
+        >
+          <v-col cols="5">
+            <v-treeview
+              :active.sync="active"
+              :items="items"
+              :open.sync="open"
+              activatable
+              color="warning"
+              open-on-click
+              transition
+            >
+              <template v-slot:prepend="{ item }">
+                <v-icon v-if="!item.children">
+                  mdi-account
+                </v-icon>
+              </template>
+            </v-treeview>
+          </v-col>
 
-          <v-dialog v-else>
-            <template v-if="item.email" v-slot:activator="{on, attr}">
-              <v-btn
-                dark
-                color="orange"
-                v-bind="attr"
-                v-on="on"
-              >連携する</v-btn>
-            </template>
-            <v-card>
-              <vue-qr :text="'https://liff.line.me/'+liffSyncUrl"></vue-qr>
+          <v-divider vertical></v-divider>
 
-              <v-card-text>
-                <v-btn
-                  dark
-                  width="100%"
-                  color="orange"
-                  :href="'https://liff.line.me/'+liffSyncUrl"
-                  target="_blank"
-                >連携</v-btn>
-              </v-card-text>
-            </v-card>
-          </v-dialog>
-        </template>
+          <v-col class="d-flex text-center py-0">
+            <v-scroll-y-transition
+              v-if="selected"
+              mode="out-in"
+            >
+              <v-list class="pa-0" width="100%">
+                <v-list-item>
+                  <v-chip
+                    v-if="selected['line_user_id']"
+                    dark
+                    label
+                    class="ma-2"
+                    color="orange"
+                  >連携済</v-chip>
 
+                  <v-spacer></v-spacer>
 
-        <template v-slot:item.actions="{ item }">
-          <v-menu offset-y>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn
-                color="normal"
-                v-bind="attrs"
-                v-on="on"
-                fab
-                small
-                depressed
-              ><v-icon>mdi-dots-vertical</v-icon></v-btn>
-            </template>
-            <v-list>
-              <v-list-item-group>
-                <v-list-item class="d-flex d-sm-none" :to="`/${page}/${item.id}`">
-                  <v-list-item-title><v-icon class="mr-2">mdi-file</v-icon>詳細</v-list-item-title>
+                  <v-menu offset-y>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                        icon
+                        v-bind="attrs"
+                        v-on="on"
+                      >
+                        <v-icon>mdi-dots-vertical</v-icon>
+                      </v-btn>
+                    </template>
+                    <v-list>
+                      <v-list-item :to="`/${page}/edit?id=${selected.id}`">
+                        <v-list-item-title>
+                          <v-icon class="">mdi-pencil</v-icon>
+                          <span class="d-none d-sm-inline">編集</span>
+                        </v-list-item-title>
+                      </v-list-item>
+                      <v-list-item @click="dialogRemove=true">
+                        <v-list-item-title>
+                          <v-icon class="">mdi-delete</v-icon>
+                          <span class="d-none d-sm-inline">削除</span>
+                        </v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
                 </v-list-item>
-                <v-list-item :to="`/${page}/edit?id=${item.id}`">
-                  <v-list-item-title><v-icon class="mr-2">mdi-file-edit</v-icon>編集</v-list-item-title>
+
+                <v-list-item>
+                  <v-card
+                    :key="selected.id"
+                    class="mx-auto"
+                    flat
+                  >
+                    <v-card-text>
+                      <v-avatar
+                        v-if="selected['image_url']"
+                        size="88"
+                      >
+                        <v-img
+                          :src="selected['image_url']"
+                          class="mb-6"
+                        ></v-img>
+                      </v-avatar>
+                      <h3 class="text-h5 mb-2">
+                        {{ selected.name }}
+                      </h3>
+                      <div class="blue--text mb-2">
+                        {{ selected.email }}
+                      </div>
+                      <div class="blue--text subheading font-weight-bold">
+                        {{ selected.uid }}
+                      </div>
+                    </v-card-text>
+                    <!-- <v-divider></v-divider> -->
+                    <v-row
+                      class="text-left"
+                      tag="v-card-text"
+                    >
+                      <!-- <v-col
+                        class="text-right mr-4 mb-2"
+                        tag="strong"
+                        cols="5"
+                      >
+                        Company:
+                      </v-col>
+                      <v-col>{{ selected.company.name }}</v-col>
+                      <v-col
+                        class="text-right mr-4 mb-2"
+                        tag="strong"
+                        cols="5"
+                      >
+                        Website:
+                      </v-col>
+                      <v-col>
+                        <a
+                          :href="`//${selected.website}`"
+                          target="_blank"
+                        >{{ selected.website }}</a>
+                      </v-col>
+                      <v-col
+                        class="text-right mr-4 mb-2"
+                        tag="strong"
+                        cols="5"
+                      >
+                        Phone:
+                      </v-col>
+                      <v-col>{{ selected.phone }}</v-col> -->
+                    </v-row>
+                  </v-card>
                 </v-list-item>
-                <v-list-item >
-                  <v-list-item-title @click="activeData=item;dialogRemove=true;"><v-icon class="mr-2">mdi-delete</v-icon>削除</v-list-item-title>
-                </v-list-item>
-              </v-list-item-group>
-            </v-list>
-          </v-menu>
-        </template>
-      </v-data-table>
+
+
+              </v-list>
+            </v-scroll-y-transition>
+          </v-col>
+        </v-row>
+      </v-card>
     </v-container>
+
 
 
     <nuxt-child v-else :page="page" />
@@ -196,13 +239,17 @@ export default {
         { text: '',         value: 'actions',       align: 'center', sortable: false, width: '100px' },
       ],
       search: '',
-      items: [],
+      // items: [],
+      active: [],
+      avatar: null,
+      open: [],
+      staffs: [],
       activeData: {},
 
       // ローディング
       loadingTbl: false,
 
-      // ダイアログ`
+      // ダイアログ
       dialogRemove: false,
     }
   },
@@ -216,9 +263,36 @@ export default {
     this.loadingTbl = true;
 
     this.setting = await this.getSetting();
-    this.items = await this.getDataList();
+    this.staffs = await this.getDataList();
 
     this.loadingTbl = false;
+  },
+  computed: {
+    items () {
+      const items = [], mps = []
+      this.staffs.forEach(stf => {
+      console.log(stf)
+        mps.push(stf['position'])
+      })
+      const arr_mp = [...new Set(mps)]
+      arr_mp.forEach(mp => {
+        let item = {
+          name: mp,
+          children: [],
+        }
+
+        this.staffs.forEach(stf => {
+          if(mp == stf['position']) item.children.push(stf)
+        })
+        items.push(item)
+      })
+      return items
+    },
+    selected () {
+      if (!this.active.length) return
+      const id = this.active[0]
+      return this.staffs.find(stf => stf.id === id)
+    },
   },
   methods: {
     /** *****************************************************

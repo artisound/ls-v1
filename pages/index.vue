@@ -60,8 +60,8 @@
 
     <v-row>
       <v-col
-        cols="12"
-        lg="3"
+        cols="6"
+        lg="2"
         sm="3"
       >
         <v-card class="mt-6">
@@ -88,7 +88,7 @@
             <v-btn
               text
               color="grey darken-1"
-              to="#"
+              @click="navigatorShare"
             >
               共有
               <v-icon
@@ -159,6 +159,19 @@ export default {
     this.loading = false
   },
   methods: {
+    /** *****************************************************
+     * 共有ボタン
+     ***************************************************** */
+    navigatorShare() {
+      if (navigator.share) {
+        navigator.share({
+          title: process.env.LINE_CHANNEL_NAME,
+          url: `https://line.me/R/ti/p/${this.qr_public}`
+        })
+      }
+    },
+
+
     /** *****************************************************
      * LINE設定情報取得
      ***************************************************** */

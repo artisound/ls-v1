@@ -75,7 +75,6 @@
                 v-bind="attrs"
                 v-on="on"
                 color="primary"
-                @click="activeData = item"
               ><v-icon>mdi-file</v-icon></v-btn>
             </template>
             <v-card>
@@ -89,8 +88,8 @@
               </v-toolbar>
 
               <v-card-text class="py-3">
-                <pre v-if="activeData.id">
-<code>{{ (Array.isArray(activeData.message_obj)) ? JSON.stringify(activeData.message_obj, null, "\t") : JSON.stringify(activeData.response, null, "\t") }}</code>
+                <pre v-if="item.id">
+<code>{{ (Array.isArray(item.message_obj)) ? JSON.stringify(item.message_obj, null, "\t") : JSON.stringify(item.response, null, "\t") }}</code>
                 </pre>
               </v-card-text>
 
@@ -168,7 +167,7 @@ export default {
         if(this.customers[lineUserId]) {
           names.push(this.customers[lineUserId]['field-name'] || this.customers[lineUserId]['field-line_user_name'])
         } else {
-          names.pus('全員')
+          names.push('全員')
         }
       }
       return names
@@ -205,3 +204,15 @@ export default {
   }
 }
 </script>
+
+
+<style>
+pre {
+  background-color: #263238 !important;
+  padding: 10px !important;
+}
+code {
+  color: white !important;
+  background-color: #263238 !important;
+}
+</style>

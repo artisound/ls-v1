@@ -96,6 +96,11 @@ import { auth, db } from '~/plugins/firebase.js';
 const LIFF_STAFF_SYNC = (process.env.NODE_ENV === 'development') ? process.env.LIFF_STAFF_SYNC_DEV : process.env.LIFF_STAFF_SYNC
 export default {
   layout: 'liff',
+  head() {
+    return {
+      title: process.env.LIFF_STAFF_SYNC_TITLE
+    }
+  },
   data() {
     return {
       title: '従業員LINE連携',

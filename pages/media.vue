@@ -1,84 +1,54 @@
 <template>
   <div>
     <v-container>
-      <v-data-table
-        :items="items"
-        :headers="headers"
-        :loading="loadingTbl"
-        :footer-props="{ 'items-per-page-text' : '行/ページ:' }"
-        locale="ja"
-        item-key="name"
-        class="elevation-2 mt-5"
-        loading-text="読み込み中"
-        no-data-text="データがありません。"
-        no-results-text="データがありません。"
-      >
 
-        <template v-slot:top>
-          <div class="d-flex flex-wrap grow px-4 p-2">
-            <v-card class="elevation-4 pa-5 mt-n5 mb-2" color="success" dark>
-              <v-icon style="font-size:32px;">mdi-tooltip-image</v-icon>
+      <v-card>
+        <div class="d-flex flex-wrap grow mt-5 px-4">
+          <v-card class="elevation-4 pa-5 mt-n5 mb-2" color="success" dark>
+            <v-icon style="font-size:32px;">mdi-tooltip-image</v-icon>
+          </v-card>
+          <v-spacer></v-spacer>
+          <div class="align-self-center">
+            <v-btn
+              text
+              router
+              exact
+              color="success"
+              class="align-center"
+              @click="dialogFileUpload = !dialogFileUpload"
+            ><v-icon class="me-2">mdi-cloud-upload</v-icon>アップロード</v-btn>
+          </div>
+        </div>
+        <v-divider></v-divider>
+
+        <div class="d-flex">
+          <v-col
+            cols="6"
+            md="2"
+            sm="3"
+            v-for="(item, i) in items"
+            :key="i"
+          >
+            <v-card @click="dialogDetails = true;activeData = item">
+              <v-img
+                aspect-ratio="1"
+                :src="item.url"
+              ></v-img>
             </v-card>
-            <v-spacer></v-spacer>
-            <div class="align-self-center">
-              <v-btn
-                text
-                router
-                exact
-                color="success"
-                class="align-center"
-                @click="dialogFileUpload = !dialogFileUpload"
-              ><v-icon class="me-2">mdi-cloud-upload</v-icon>アップロード</v-btn>
-            </div>
-          </div>
-
-          <v-divider></v-divider>
-        </template>
-
-        <template v-slot:item.name="{ item }">
-          <div class="d-flex flex-row-reverse flex-sm-column align-center ma-2">
-            <img :src="item.url" alt="" class="d-block mx-sm-auto mx-2 ma-2" style="width:80px;">
-            <v-chip color="blue" outlined small class="mx-auto">{{item.name}}</v-chip>
-          </div>
-        </template>
-
-        <template v-slot:item.url="{ item }">
-          <v-btn
-            icon
-            outlined
-            @click="copyImageUrl(item.url)"
-            color="info"
-          ><v-icon>mdi-content-copy</v-icon></v-btn>
-        </template>
-
-        <template v-slot:item.created_at="{ item }">
-          {{ datetimeFormat(item.created_at, 'YYYY/MM/DD HH:mm') }}
-        </template>
-
-        <template v-slot:item.actions="{ item }">
-          <v-menu offset-y>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn
-                color="normal"
-                v-bind="attrs"
-                v-on="on"
-                fab
-                small
-                depressed
-              ><v-icon>mdi-dots-vertical</v-icon></v-btn>
-            </template>
-            <v-list>
-              <v-list-item-group>
-                <v-list-item >
-                  <v-list-item-title @click="activeData=item;dialogRemove=true;"><v-icon class="mr-2">mdi-delete</v-icon>削除</v-list-item-title>
-                </v-list-item>
-              </v-list-item-group>
-            </v-list>
-          </v-menu>
-        </template>
-      </v-data-table>
+          </v-col>
+        </div>
+        
+      </v-card>
     </v-container>
 
+    <!-- ダイアログ | 画像詳細情報 -->
+    <v-dialog v-model="dialogDetails">
+      <v-card>
+        <v-img
+          :src="activeData.url"
+        ></v-img>
+      </v-card>
+    </v-dialog>
     
     <!-- ダイアログ | 画像アップロード -->
     <v-dialog v-model="dialogFileUpload" width="500">
@@ -203,6 +173,7 @@ export default {
       fbStorage: getStorage(),
 
       // ダイアログ`
+      dialogDetails: false,
       dialogFileUpload: false,
       dialogRemove: false,
     }
