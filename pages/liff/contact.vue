@@ -456,7 +456,7 @@ export default {
         }
 
         // LIFF画面を閉じる
-        // liff.closeWindow()
+        liff.closeWindow()
       } catch (e) {
         console.error(e)
       }
