@@ -8,9 +8,10 @@ const axios      = require('axios');
 const line       = require('@line/bot-sdk');
 const middleware = line.middleware;
 
-const date       = new Date();
-const region     = 'asia-northeast2';
-const timezone   = 'Asia/Tokyo';
+const logger    = functions.logger;
+const date      = new Date();
+const region    = 'asia-northeast2';
+const timezone  = 'Asia/Tokyo';
 
 admin.initializeApp();
 
@@ -57,7 +58,7 @@ line_wh.use((err, req, res, next) => {
  * LINE Callback
  ********************************************************************************************************** */
 async function handleEvent(event) {
-  functions.logger.log(event.message)
+  logger.log(event.message)
   // *********************************************************
   // メッセージイベント
   // *********************************************************
@@ -89,7 +90,7 @@ async function handleEvent(event) {
             type: 'text',
             text: message,
           })
-          functions.logger.log(JSON.stringify(ret, null, "\t"));
+          logger.log(JSON.stringify(ret, null, "\t"));
 
         } else {
           const fs = await admin.firestore()
@@ -112,10 +113,10 @@ async function handleEvent(event) {
                 msg_format.push(msg)
               }
             }
-            functions.logger.log(JSON.stringify(msg_format));
+            logger.log(JSON.stringify(msg_format));
 
             let ret = await line_public_client.replyMessage(event.replyToken, msg_format);
-            functions.logger.log(JSON.stringify(ret, null, "\t"));
+            logger.log(JSON.stringify(ret, null, "\t"));
           } else {
             // LINE設定
             // const config = await admin.firestore().doc('setting/line').get().then(doc => {
@@ -133,13 +134,13 @@ async function handleEvent(event) {
               });
               return staffs;
             });
-            functions.logger.log(staffs);
+            logger.log(staffs);
 
             const user_name = config['field-line_user_name'] || profile.displayName;
             const msgText   = `From: ${user_name}\n----------\n${event.message.text}`;
 
             let ret = await line_admin_client.multicast(staffs, { type: 'text', text: msgText });
-            functions.logger.log(JSON.stringify(ret, null, "\t"));
+            logger.log(JSON.stringify(ret, null, "\t"));
           }
         }
         return;
@@ -184,13 +185,13 @@ async function handleEvent(event) {
           });
           return staffs;
         });
-        functions.logger.log(staffs);
+        logger.log(staffs);
 
         const user_name = config['field-name'] || profile.displayName;
         const msgText   = `From: ${user_name}\n----------\nスタンプが届きました。`;
 
         let ret = await line_admin_client.multicast(staffs, { type: 'text', text: msgText });
-        functions.logger.log(ret);
+        logger.log(ret);
         return;
 
       default:
@@ -239,13 +240,13 @@ async function handleEvent(event) {
      * メッセージログ保存
      ************************************** */
     const log = await admin.firestore().collection('msg_log').add({
-      timestamp : date.getTime(),
+      timestamp : moment().valueOf(),
       action    : '再フォロー',
       sended_to : event.source.userId,
       response  : msgText,
       message_obj: ret,
     });
-    functions.logger.log(log)
+    logger.log(log)
 
     // Firestoreにユーザーデータ登録
     const profile = await line_public_client.getProfile(event.source.userId);
@@ -257,10 +258,10 @@ async function handleEvent(event) {
       'field-line_picture'        : profile.pictureUrl,
       'field-line_follow_datetime': event.timestamp,
     }, { merge: true }).then(() => {
-      functions.logger.log(event);
+      logger.log(event);
     }).catch((err) => {
       // 保存に失敗した際の処理
-      functions.logger.log(err);
+      logger.log(err);
     });
   }
 
@@ -274,10 +275,10 @@ async function handleEvent(event) {
       'field-line_follow_status' : event.type,
       'field-line_block_datetime': event.timestamp,
     }, { merge: true }).then(() => {
-      functions.logger.log(event);
+      logger.log(event);
     }).catch((err) => {
       // 保存に失敗した際の処理
-      functions.logger.log(err);
+      logger.log(err);
     });
   }
 }
@@ -310,22 +311,31 @@ exports.scheduledMessage = functions.region(region).pubsub
   .onRun(async () => {
 
   // --------------------------------------------------------------------------------------------
+  const now   = moment().valueOf();
+  const start = moment().startOf('minute');
+  const end   = moment().endOf('minute');
 
-  const now = date.getTime();
+  logger.log(start);
+  logger.log(moment(start).valueOf());
+
   const fs  = await admin.firestore()
     .collection('message')
-    .where('reserve_at', '>=', moment(now).startOf('second'))
-    .where('reserve_at', '<=', moment(now).endOf('second'))
+    .where('active', '==', true)
     .get();
+    // .where('reserve_at', '>=', start)
+    // .where('reserve_at', '<=', end)
 
   const messages = [];
   let data;
   fs.forEach(d => {
     data = d.data();
     data.id = d.id;
-    if(data.active) messages.push(data);
+    if (data.reserve_at && data.reserve_at == start) messages.push(data);
+    // if(data.active) messages.push(data);
   });
-  functions.logger.log(`${messages.length} case applicable`);
+  logger.log(`${messages.length} case applicable`);
+
+  return;
 
   /** ------------------------+
    * 取得したメッセージを検証 */
@@ -361,7 +371,7 @@ exports.scheduledMessage = functions.region(region).pubsub
             .doc(customer)
             .get()
             .then( resp => customers.push(resp.data()) )
-            .catch( err => functions.logger.log(301, err) );
+            .catch( err => logger.log(301, err) );
         }
 
         for (let customer of customers) {
@@ -396,13 +406,13 @@ exports.scheduledMessage = functions.region(region).pubsub
            * メッセージログ保存
            ************************************** */
           await admin.firestore().collection('msg_log').add({
-            timestamp  : date.getTime(),
+            timestamp  : moment().valueOf(),
             action     : '予約配信',
             sended_to  : customer['field-line_user_id'],
             response   : lineRet,
             message_obj: send_msg_format,
           });
-          functions.logger.log(333, lineRet);
+          logger.log(333, lineRet);
         }
       }
       /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
@@ -429,13 +439,13 @@ exports.scheduledMessage = functions.region(region).pubsub
          * メッセージログ保存
          ************************************** */
         await admin.firestore().collection('msg_log').add({
-          timestamp  : date.getTime(),
+          timestamp  : moment().valueOf(),
           action     : '予約配信',
           sended_to  : doc.collection,
           response   : lineRet,
           message_obj: msg_format,
         });
-        functions.logger.log(346, lineRet);
+        logger.log(346, lineRet);
       }
     }
     /** *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
@@ -462,16 +472,16 @@ exports.scheduledMessage = functions.region(region).pubsub
        * メッセージログ保存
        ************************************** */
       await admin.firestore().collection('msg_log').add({
-        timestamp  : date.getTime(),
+        timestamp  : moment().valueOf(),
         action     : '予約配信',
         sended_to  : 'all_user',
         response   : lineRet,
         message_obj: msg_format,
       });
-      functions.logger.log(359, lineRet);
+      logger.log(359, lineRet);
     }
 
-    functions.logger.log(362, lineRet);
+    logger.log(362, lineRet);
 
     /** **************************************
      * 送信日時を更新
@@ -506,7 +516,7 @@ exports.steppedMessage = functions.region(region).pubsub
   const messages    = [];
   const now_oclock  = moment().format('H');
   fs01.forEach(d => messages.push( d.data() ));
-  functions.logger.log(`${messages.length} case applicable`);
+  logger.log(`${messages.length} case applicable`);
 
   if (messages.length) {
     /** ------------------------+
@@ -580,13 +590,13 @@ exports.steppedMessage = functions.region(region).pubsub
            * メッセージログ保存
            ************************************** */
           await admin.firestore().collection('msg_log').add({
-            timestamp  : date.getTime(),
+            timestamp  : moment().valueOf(),
             action     : 'ステップ配信',
             sended_to  : customer['field-line_user_id'],
             response   : lineRet,
             message_obj: send_msg_format,
           });
-          // functions.logger.log(418, JSON.stringify(lineRet));
+          // logger.log(418, JSON.stringify(lineRet));
         }
       }
     }
@@ -645,13 +655,13 @@ exports.scheduledReserve = functions.region(region).pubsub
          * メッセージログ保存
          ************************************** */
         await admin.firestore().collection('msg_log').add({
-          timestamp  : date.getTime(),
+          timestamp  : moment().valueOf(),
           action     : '予約1日前配信',
           sended_to  : data.userId,
           response   : lineRet,
           message_obj: msg_format,
         });
-        // functions.logger.log(lineRet);
+        // logger.log(lineRet);
       }));
     }
     return null;
