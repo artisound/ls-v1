@@ -322,8 +322,6 @@ exports.scheduledMessage = functions.region(region).pubsub
     .collection('message')
     .where('active', '==', true)
     .get();
-    // .where('reserve_at', '>=', start)
-    // .where('reserve_at', '<=', end)
 
   const messages = [];
   let data;
@@ -331,11 +329,8 @@ exports.scheduledMessage = functions.region(region).pubsub
     data = d.data();
     data.id = d.id;
     if (data.reserve_at && data.reserve_at == start) messages.push(data);
-    // if(data.active) messages.push(data);
   });
   logger.log(`${messages.length} case applicable`);
-
-  return;
 
   /** ------------------------+
    * 取得したメッセージを検証 */
