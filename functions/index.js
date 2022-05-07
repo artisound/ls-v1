@@ -370,8 +370,7 @@ exports.scheduledMessage = functions.region(region).pubsub
         }
 
         for (let customer of customers) {
-          let msg_format = JSON.stringify(doc.msg_format);
-          msg_format = JSON.parse(msg_format);
+          let msg_format = JSON.parse(JSON.stringify(doc.msg_format));
 
           let customer_name = customer['field-name'] || customer['field-line_user_name'];
 
@@ -390,12 +389,14 @@ exports.scheduledMessage = functions.region(region).pubsub
             } else {
               send_msg_format.push(msg)
             }
-          })
+          });
+          logger.log(send_msg_format);
 
           /** **************************************
            * メッセージ送信
            ************************************** */
           lineRet = await line_public_client.pushMessage(customer['field-line_user_id'], send_msg_format, doc.notification_disabled);
+          logger.log(lineRet);
 
           /** **************************************
            * メッセージログ保存
