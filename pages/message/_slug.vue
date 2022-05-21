@@ -192,7 +192,7 @@
                 v-model="fmt.text"
               ></v-textarea>
 
-              <div class="d-flex">
+              <!-- <div class="d-flex">
                 <v-col
                   cols="12"
                   class="d-flex px-0"
@@ -202,7 +202,7 @@
                     @click="execInsertText('name', key)"
                   >名前を挿入</v-btn>
                 </v-col>
-              </div>
+              </div> -->
             </v-card-text>
 
             <!-- image -->

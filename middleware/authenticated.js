@@ -17,20 +17,20 @@ export default async ({ store, route, redirect }) => {
       if (Object.keys(staff).length) {
         // ==============================
         // ログイン
-        if (route.name === 'login') redirect('/')
+        if (route.name === 'login') return redirect('/')
       } else {
         // ==============================
         // ログアウト
         await signOut(auth);
       }
     } else {
-      if (route.name === 'login') redirect('/')
+      if (route.name === 'login') return redirect('/')
     }
   } else {
     // +==============================
     // | 未ログイン
     if ( route.name !== 'login' && !route.fullPath.startsWith('/liff') ) {
-      redirect('/login')
+      return redirect('/login')
     }
   }
 

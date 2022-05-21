@@ -48,6 +48,10 @@
           {{ item['field-name'] || item['field-line_user_name'] }}
         </template>
 
+        <template v-slot:item.field-line_follow_datetime="{ item }">
+          {{ datetimeFotmat(item['field-line_follow_datetime'], 'YYYY/M/D H:mm') }}
+        </template>
+
         <template v-slot:item.field-status="{ item }">
           <v-chip v-if="item['field-line_follow_status']=='follow'" color="green" dark>フォロー中</v-chip>
           <v-chip v-else-if="item['field-line_follow_status']=='unfollow'" color="red" dark>ブロック中</v-chip>
@@ -106,6 +110,7 @@
 import { db } from '~/plugins/firebase.js';
 import { doc, collection, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
 import {lineMsgApi} from '~/plugins/line_api.js';
+import moment from 'moment';
 
 export default {
   layout: 'main',
@@ -119,11 +124,12 @@ export default {
       page: 'customer',
       // 表
       headers: [
-        { text: '',           value: 'field-line_picture',  align: 'center', sortable: false, width: '100px' },
-        { text: 'お客様名',   value: 'field-name',          align: 'center', sortable: false },
-        { text: '性別',       value: 'field-gender',        align: 'center' },
-        { text: 'お住まい',   value: 'field-address',       align: 'center' },
-        { text: 'ステータス', value: 'field-status',        align: 'center' },
+        { text: '',           value: 'field-line_picture',          align: 'center', sortable: false, width: '100px' },
+        { text: 'お客様名',   value: 'field-name',                  align: 'center', sortable: false },
+        { text: '性別',       value: 'field-gender',                align: 'center' },
+        { text: 'お住まい',   value: 'field-address',               align: 'center' },
+        { text: '登録日',     value: 'field-line_follow_datetime',  align: 'center' },
+        { text: 'ステータス', value: 'field-status',                align: 'center' },
         // { text: '',           value: 'actions', align: 'center', sortable: false, width: '100px' },
       ],
       search: '',
@@ -152,6 +158,10 @@ export default {
     this.loadingTbl = false;
   },
   methods: {
+    datetimeFotmat(dt, format) {
+      return moment(dt).format(format)
+    },
+
     /** *****************************************************
      * データ一覧取得
      ***************************************************** */
